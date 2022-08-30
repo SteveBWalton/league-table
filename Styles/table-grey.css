@@ -1,0 +1,30 @@
+body { background-color: #E0E0E0; color: black; }
+
+tr.title { background-color: navy; color: peru; }
+
+fieldset { border: 1px solid grey; }
+legend { color: grey; }
+
+div.toolbar { background-color: black; color: white; }
+
+.win { color: green; }
+.lost { color: red; }
+.win2 { background-color: #CCFFCC;}
+.lost2 { background-color: #FFCCCC;}
+.draw { color: darkkhaki; }
+.age { color: grey ;}
+.years { color: peru;  }
+.date { color: peru;  }
+.date_guess { color: grey; }
+.rank { color: peru; }
+.comment { color: grey; }
+.secondary { color: grey; }
+.sectitle { background-color: navy; color: grey; } /* transparent did not work */
+.seed { color: green; }
+.label { color: gray; }
+.location { color: grey; }
+
+.wdlbox { stroke: black; }
+.wdlbox_win { fill: green; }
+.wdlbox_draw { fill: yellow; }
+.wdlbox_lose { fill: red; }

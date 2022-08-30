@@ -52,25 +52,25 @@ import datetime
 # import urllib
 
 # Application libraries.
-import walton.year_range
+#import walton.year_range
 import walton.glade.webkit
 import walton.glade.fullscreen
-import walton.glade.select_years
-import walton.glade.select_country
-import walton.glade.edit_country
-import glade.preferences
-import glade.edit_team
-import glade.edit_matches
-import glade.edit_sport
-import glade.edit_tournament
-import glade.edit_location
-import glade.edit_season
+#import walton.glade.select_years
+#import walton.glade.select_country
+#import walton.glade.edit_country
+#import glade.preferences
+#import glade.edit_team
+#import glade.edit_matches
+#import glade.edit_sport
+#import glade.edit_tournament
+#import glade.edit_location
+#import glade.edit_season
 
 
 
 class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscreen):
     '''
-    Class to represent the main window for the 'Sports Results' database.
+    Class to represent the main window for the 'table' program.
 
     :ivar int noEvents: Set to greater than zero to ingore signals.  Restore to zero to respond to signals.
     :ivar string request: The last page request.
@@ -206,7 +206,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         self.configuration = self.application.configuration
 
         # The year range to apply to the page requests.
-        self.yearRange = walton.year_range.YearRange()
+        # self.yearRange = walton.year_range.YearRange()
 
         # The ID of the selected tournament to apply to page requests. Use 'None' for no selected tournament.
         self.selectedTournamentIndex = None
@@ -232,8 +232,8 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
 
         self.render.showHome({})
         self.displayCurrentPage()
-        self.window.set_title(self.database.currentSport.name + ' - Sports Results DB')
-        self.render.html.title = self.database.currentSport.name + ' - Sports Results DB'
+        #self.window.set_title(self.database.currentSport.name + ' - Sports Results DB')
+        #self.render.html.title = self.database.currentSport.name + ' - Sports Results DB'
 
         # Some silly stuff
         # print "gtk.RESPONSE_OK = ",int(gtk.RESPONSE_OK)
@@ -244,7 +244,6 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             'edit_season'       : self.editSeason,
             'edit_matches'      : self.editMatches,
         }
-
 
         # Move the focus off the toolbar.
         self.webview.grab_focus()
@@ -560,7 +559,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         :param string link: Specifies the link to follow.  This is expected to be the link after the 'app:' prefix.
         :param boolean addToHistory: Specifies true to add the specified link to the history.
         '''
-        if self.database.debug:
+        if self.application.debug:
             print('followLocalLink("{}")'.format(link))
 
         # Show the wait cursor.
@@ -705,16 +704,16 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             parametersString += '&age=show'
 
         # Check for a year range.
-        if not self.yearRange.allYears:
-            parametersString += '&firstyear={}&lastyear={}'.format(self.yearRange.firstYear, self.yearRange.lastYear)
+        #if not self.yearRange.allYears:
+        #    parametersString += '&firstyear={}&lastyear={}'.format(self.yearRange.firstYear, self.yearRange.lastYear)
 
         # Check for a selected tournament.
-        if self.selectedTournamentIndex != None:
-            parametersString += '&tournamentid={}'.format(self.selectedTournamentIndex)
+        #if self.selectedTournamentIndex != None:
+        #    parametersString += '&tournamentid={}'.format(self.selectedTournamentIndex)
 
         # Check for a selected country.
-        if self.selectedCountryIndex != None:
-            parametersString += '&countryid={}'.format(self.selectedCountryIndex)
+        #if self.selectedCountryIndex != None:
+        #    parametersString += '&countryid={}'.format(self.selectedCountryIndex)
 
         # Check for a specified level.
         if self.selectedLevel != None:
@@ -725,7 +724,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             parametersString = parametersString[1:]
 
         # Display this request.
-        if self.database.debug:
+        if self.application.debug:
             print("Request '{}', Parameters '{}'".format(self.request, parametersString))
 
         parameters = self.decodeParameters(parametersString)
@@ -736,69 +735,9 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         if self.request in self.render.actions:
             isNewContent = True
             self.render.actions[self.request](parameters)
-        elif self.request == 'tournament_winners':
-            self.render.showTournamentWinners(parameters)
-        elif self.request == 'show_season':
-            self.render.showSeason(parameters)
-        elif self.request == 'show_team':
-            self.render.showTeam(parameters)
-        elif self.request == 'table_teams':
-            self.render.showTableTeams(parameters)
-        elif self.request == 'table_matches':
-            self.render.showTableMatches(parameters)
-        elif self.request == 'table_nations':
-            self.render.showTableNations(parameters)
-        elif self.request == 'table_nation_matches':
-            self.render.showTableNationMatches(parametersString)
-        elif self.request == 'list_matches':
-            self.render.showListMatches(parametersString)
-        elif self.request == 'table_headtohead':
-            self.render.showTableHeadToHead(parametersString)
-        elif self.request == 'switch_sports':
-            self.render.showSwitchSports(parameters)
-            self.window.set_title(self.database.currentSport.name + ' - Sports Results DB')
-            self.render.html.title = self.database.currentSport.name + ' - Sports Results DB'
-        elif self.request == 'configure_sport':
-            self.render.showConfigureSport(parameters)
-        elif self.request == 'country_db':
-            self.render.showCountryDb(parametersString)
-        elif self.request == 'head_head':
-            self.render.showHeadToHead(parametersString)
-        elif self.request == 'show_country':
-            self.render.showCountry(parameters)
-        elif self.request == 'table_championage':
-            self.render.showAgeChampions(parameters)
-        elif self.request == 'show_location':
-            self.render.showLocation(parameters)
-        elif self.request == 'table_locations':
-            self.render.showTableLocations(parametersString)
-
         elif self.request in self.actions:
             isNewContent = True
             self.actions[self.request](parameters)
-        elif self.request == 'edit_sport':
-            if self.editSport(parametersString):
-                self.followLocalLink('configure_sport', False)
-        elif self.request == 'edit_team':
-            if self.editTeam(parameters):
-                self.followLocalLink('show_team?' + parametersString, False)
-        elif self.request == 'edit_country':
-            if self.editCountry(parameters):
-                self.followLocalLink('country_db?' + parametersString, False)
-        elif self.request == 'edit_tournament':
-            if self.editTournament(parameters):
-                self.followLocalLink('showConfigureSport', False)
-        elif self.request == 'add_sport':
-            if self.addSport(parameters):
-                self.followLocalLink('switch_sports', False)
-        elif self.request == 'edit_location':
-            if self.editLocation(parameters):
-                self.followLocalLink('show_location?' + parametersString, False)
-
-        elif self.request == 'about':
-            self.render.showAbout(parameters)
-        #elif self.request == 'maintenence':
-        #    self.render.databaseMaintenance(parameters)
         else:
             # Error don't do anything.
             isNewContent = False
@@ -877,32 +816,32 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             menuitemViewPrevious.set_sensitive(True)
 
         # Enable / Disable the Age button.
-        toolbuttonAge = self.builder.get_object('toolbuttonAge')
-        if self.render.showAge and self.database.currentSport.birthdates:
-            toolbuttonAge.set_sensitive(True)
-        else:
-            toolbuttonAge.set_sensitive(False)
-            toolbuttonAge.set_active(False)
+        #toolbuttonAge = self.builder.get_object('toolbuttonAge')
+        #if self.render.showAge and self.database.currentSport.birthdates:
+        #    toolbuttonAge.set_sensitive(True)
+        #else:
+        #    toolbuttonAge.set_sensitive(False)
+        #    toolbuttonAge.set_active(False)
 
         # Enable / Disable the tournaments menu system.
-        tbmenuTournament = self.builder.get_object('tbmenuTournament')
-        if self.render.tournamentSelect and len(self.database.currentSport.tournamentsByStatus)>1:
-            # Check that the menu options are upto date
-            if self.tournamentSportIndex != self.database.currentSport.index:
-                for nIndex in [1, 2, 3, 4]:
-                    menuTourament = self.builder.get_object('menuTournament'+str(nIndex))
-                    if len(self.database.currentSport.tournamentsByStatus) >= nIndex:
-                        tournament = self.database.getTournament(self.database.currentSport.tournamentsByStatus[nIndex-1])
-                        menuTourament.set_visible(True)
-                        menuTourament.set_label(tournament.name)
-                    else:
-                        menuTourament.set_visible(False)
-                self.tournamentSportIndex=self.database.currentSport.index
-            tbmenuTournament.set_sensitive(True)
-        else:
-            tbmenuTournament.set_label('All Tournaments')
-            tbmenuTournament.set_sensitive(False)
-            self.selectedTournamentIndex = None
+        #tbmenuTournament = self.builder.get_object('tbmenuTournament')
+        #if self.render.tournamentSelect and len(self.database.currentSport.tournamentsByStatus)>1:
+        #    # Check that the menu options are upto date
+        #    if self.tournamentSportIndex != self.database.currentSport.index:
+        #        for nIndex in [1, 2, 3, 4]:
+        #            menuTourament = self.builder.get_object('menuTournament'+str(nIndex))
+        #            if len(self.database.currentSport.tournamentsByStatus) >= nIndex:
+        #                tournament = #self.database.getTournament(self.database.currentSport.tournamentsByStatus[nIndex-1])
+        #                menuTourament.set_visible(True)
+        #                menuTourament.set_label(tournament.name)
+        #            else:
+        #                menuTourament.set_visible(False)
+        #        self.tournamentSportIndex=self.database.currentSport.index
+        #    tbmenuTournament.set_sensitive(True)
+        #else:
+        #    tbmenuTournament.set_label('All Tournaments')
+        #    tbmenuTournament.set_sensitive(False)
+        #    self.selectedTournamentIndex = None
 
         # Enable / Disable the levels menu system.
         menutoolbuttonLevel = self.builder.get_object('menutoolbuttonLevel')

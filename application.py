@@ -69,7 +69,6 @@ class Application(walton.application.IApplication):
 
         # The Database object for the table program.
         self.database = Database(self.configuration.databaseFilename)
-        self.database.setCurrentSport(self.configuration.currentSportIndex)
 
         # The Render object for the application.
         # This is the object that renders the application results to html pages for display.

@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
 
         # Save the configuration file.
-        application.configuration.setCurrentSport(str(application.database.currentSport.index))
+        # application.configuration.setCurrentSport(str(application.database.currentSport.index))
         application.configuration.saveConfigurationFile()
     else:
         print('Error - Graphics are not available.')

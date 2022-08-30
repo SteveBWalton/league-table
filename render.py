@@ -14,7 +14,7 @@ import time
 # Import my own libraries.
 import walton.html
 import walton.toolbar
-from match_type import MatchType
+# from match_type import MatchType
 
 
 
@@ -79,6 +79,7 @@ class Render(walton.toolbar.IToolbar):
             'home'              : self.showHome,
             'index'             : self.showIndex,
             'preferences'       : self.showPreferences,
+            'show_team'         : self.showTeam,
         }
 
 
@@ -151,61 +152,81 @@ class Render(walton.toolbar.IToolbar):
         firstYear = int(parameters['firstyear']) if 'firstyear' in parameters else None
         lastYear = int(parameters['lastyear']) if 'lastyear' in parameters else None
 
-        if lastYear == firstYear and firstYear != None:
-            firstYear = lastYear - 4
-        # print('firstYear {}, lastYear {}'.format(firstYear, lastYear))
-
-        # Decide the range of dates.
-        if firstYear is None:
-            seasons = self.database.currentSport.getSeasons(None, limit=5)
-            if len(seasons) == 0:
-                now = datetime.datetime.now()
-                lastDate = '{}-12-31'.format(now.year)
-                firstDate = '{}-01-01'.format(now.year)
-            else:
-                season = self.database.getSeason(seasons[0])
-                lastDate = '{}'.format(season.theFinish)
-                season = self.database.getSeason(seasons[len(seasons)-1])
-                firstDate = '{}'.format(season.theStart)
-        else:
-            lastDate = '{}-12-31'.format(lastYear)
-            firstDate = '{}-01-01'.format(firstYear)
-        # print('firstDate {}, lastDate {}'.format(firstDate, lastDate))
-
         self.html.clear()
         # self.displayToolbar(True, None, 'home?firstyear={}&lastyear={}'.format(firstSeason-1, lastSeason-1), 'home?firstyear={}&lastyear={}'.format(firstSeason+1, lastSeason+1), False, True, False)
         self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, None, 'home', 'home', False, True, False)
-        self.html.addLine('<h1>{}</h1>'.format(self.database.currentSport.name))
+        self.html.addLine('<h1>Home</h1>')
 
-        # Display the recent champions.
-        self.html.addLine('<fieldset>')
-        self.html.addLine('<legend>Recent Champions</legend>')
-        if firstYear is None:
-            self.displayTournamentWinners({'firstyear': -5})
-        else:
-            self.displayTournamentWinners({'firstyear': firstYear, 'lastyear': lastYear})
-        self.html.addLine('<p><a href="app:tournament_winners">more...</a></p>')
+        # Connect to the database.
+        cndb = sqlite3.connect(self.database.filename)
+
+        self.html.addLine('<fieldset><legend>Administration</legend>')
+        self.html.addLine('<table>')
+        self.html.addLine('<tr><td colspan="2">Team</td><td>P</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>Pts</td><td>Dif</td></tr>')
+
+        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
+        sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES WHERE SEASON_ID = 1 GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+        sql += "INNER JOIN "
+        sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES WHERE SEASON_ID = 1 GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+        sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
+        sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
+        # print(sql)
+        # sql .= "USING (TEAM_ID);"
+        cursor = cndb.execute(sql)
+        count = 0
+        for row in cursor:
+            self.html.add('<tr>')
+            team = self.database.getTeam(row[0])
+
+            count += 1
+            self.html.add(f'<td class="rank" style="text-align: right;">{count}</td>')
+            self.html.add(f'<td>{team.toHtml()}</td>')
+
+            self.html.add(f'<td style="text-align: right;">{row[1]+row[2]+row[3]+row[6]+row[7]+row[8]}</td>')
+
+            self.html.add(f'<td style="text-align: right;">{row[1]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[2]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[3]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[4]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[5]}</td>')
+
+            self.html.add(f'<td style="text-align: right;">{row[6]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[7]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[8]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[9]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[10]}</td>')
+
+            self.html.add(f'<td style="text-align: right;">{row[11]}</td>')
+            self.html.add(f'<td style="text-align: right;">{row[12]}</td>')
+
+            self.html.addLine('</tr>')
+
+        self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
 
-        # Display the table of recent champions.
-        self.html.addLine('<fieldset>')
-        self.html.addLine('<legend>Table of Recent Champions</legend>')
-        self.displayTableTeams({'startdate' : firstDate, 'enddate' : lastDate, 'limit' : 12})
-        self.html.addLine('<p><a href="app:table_teams">all time...</a></p>')
+        self.html.addLine('<fieldset><legend>Administration</legend>')
+        self.html.addLine('<table>')
+        sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC;"
+        params = (1, )
+        cursor = cndb.execute(sql, params)
+        for row in cursor:
+            self.html.add('<tr>')
+            homeTeam = self.database.getTeam(row[1])
+            awayTeam = self.database.getTeam(row[2])
+
+            self.html.add(f'<td>{row[0]}</td>')
+            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+            self.html.add(f'<td>{row[3]}</td>')
+            self.html.add(f'<td>{row[4]}</td>')
+            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+            self.html.addLine('</tr>')
+
+        self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
 
-        self.html.addLine('<table class="columns" style="width:100%;"><tr><td class="columns">')
-        self.html.addLine('<fieldset><legend>Data</legend>')
-        self.html.addLine('<ul>')
-        self.html.addLine('<li><a href="app:index">Full Index</a></li>')
-        self.html.addLine('<li><a href="app:table_matches">Table of Matches</a></li>')
-        if self.database.currentSport.tableNations:
-            self.html.addLine('<li><a href="app:table_nations">Table of Nations</a></li>')
-        self.html.addLine('<li><a href="app:table_teams?orderby=1">{} by Date of Birth</a></li>'.format(self.database.currentSport.plural))
-        self.html.addLine('<li><a href="app:list_matches">List of Matches</a></li>')
-        self.html.addLine('</ul>')
-        self.html.addLine('</fieldset>')
-        self.html.addLine('</td><td class="columns">')
+        # Close the database.
+        cndb.close()
+
         self.html.addLine('<fieldset><legend>Administration</legend>')
         self.html.addLine('<ul>')
         self.html.addLine('<li><a href="app:switch_sports">Switch Sports</a></li>')
@@ -263,14 +284,6 @@ class Render(walton.toolbar.IToolbar):
         self.countrySelect = False
         self.levels = None
         self.clipboardText = None
-
-
-
-
-
-
-
-
 
 
 
@@ -453,3 +466,56 @@ class Render(walton.toolbar.IToolbar):
         self.countrySelect = False
         self.yearsSelect = False
         self.levels = None
+
+
+
+    def showTeam(self, parameters):
+        '''
+        Render the specified team on the html object.
+
+        :param string parametersString: Specify the request parameters as as string. This should include 'id' to identify the actual team.
+        '''
+        # Decode the paramters.
+        teamIndex = int(parameters['id']) if 'id' in parameters else 1
+        level = int(parameters['level']) if 'level' in parameters else 0
+        isShowAge = True if 'age' in parameters else False
+        firstYear = parameters['firstyear'] if 'firstyear' in parameters else None
+        lastYear = parameters['lastyear'] if 'lastyear' in parameters else None
+        tournamentIndex = int(parameters['tournamentid']) if 'tournamentid' in parameters else 0
+        flags = int(parameters['flags']) if 'flags' in parameters else 0
+
+        # Get the team object.
+        team = self.database.getTeam(teamIndex)
+
+        # Connect to the database.
+        cndb = sqlite3.connect(self.database.filename)
+
+        # Initialise the display.
+        self.html.clear()
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, 'edit_team?id={}'.format(teamIndex), None, None, True, True, False, '')
+
+        self.html.add(f'<p><span class="h1">{team.name}</span></p>')
+
+        self.html.addLine('<fieldset><legend>Administration</legend>')
+        self.html.addLine('<table>')
+        sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) ORDER BY THE_DATE DESC;"
+        params = (1, teamIndex, teamIndex)
+        cursor = cndb.execute(sql, params)
+        for row in cursor:
+            self.html.add('<tr>')
+            homeTeam = self.database.getTeam(row[1])
+            awayTeam = self.database.getTeam(row[2])
+
+            self.html.add(f'<td>{row[0]}</td>')
+            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+            self.html.add(f'<td>{row[3]}</td>')
+            self.html.add(f'<td>{row[4]}</td>')
+            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+            self.html.addLine('</tr>')
+
+        self.html.addLine('</table>')
+        self.html.addLine('</fieldset>')
+
+        # Close the database.
+        cndb.close()
+

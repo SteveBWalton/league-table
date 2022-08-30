@@ -1,0 +1,15 @@
+p { font-size: [FONT-SIZE,+5]; margin-top: 3px; margin-bottom: 3px; }
+h1 { font-size: [FONT-SIZE,*2,+4]; margin-top: 3px; margin-bottom: 3px; }
+h2 { font-size: [FONT-SIZE,*2]; margin-top: 3px; margin-bottom: 3px; }
+li { font-size: [FONT-SIZE,*2]; margin-top: 3px; margin-bottom: 3px; }
+td { font-size: [FONT-SIZE,+5]; margin-top: 3px; margin-bottom: 3px; }
+legend { font-size: 7pt; }
+.h1 { font-size: [FONT-SIZE,*2,+4]; }
+.age { font-size: [FONT-SIZE]; }
+.years { font-size: [FONT-SIZE]; }
+.date { font-size: [FONT-SIZE]; }
+.date_guess { font-size: [FONT-SIZE]; }
+.rank { font-size: [FONT-SIZE,-4,>7]; }
+.seed { font-size: 7pt; }
+.label { font-size: [FONT-SIZE,+1]; }
+.location { font-size: 7pt; }

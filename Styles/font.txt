@@ -1,0 +1,4 @@
+p { font-family: [FONT]; }
+h1 { font-family: [FONT]; }
+h2 { font-family: [FONT]; }
+td { font-family: [FONT]; }

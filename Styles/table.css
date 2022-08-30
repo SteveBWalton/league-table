@@ -1,0 +1,53 @@
+body { }
+p { }
+h1 { }
+h2 { }
+a { text-decoration: none; color: inherit; }
+a:hover { text-decoration: underline; color: inherit; }
+a:visited { color: inherit; }
+table { border-spacing: 0px; border-collapse: collapse; }
+tr { vertical-align: middle; }
+td { vertical-align: middle; }
+
+tr.title { font-weight: 700; border-bottom: none;}
+tr.divider { border-top: 1pt dashed silver;}
+
+table.columns { margin: 0px; padding: 0px; border: 0px solid: black; }
+td.columns { vertical-align: top; } /* table.columns td had side effects into tables inside columns. */
+
+table.centretext td { text-align: center; }
+table.righttext td { text-align: right; }
+
+fieldset { }
+legend { }
+
+/* These are required to stop extra spacing in html5 */
+img { padding: 0px; border: 0px; margin: 0px; vertical-align: middle;}
+img.flag { padding: 0px; border: 0px; margin: 0px; vertical-align: top; border: 1px solid black;}
+svg { padding: 0px; border: 0px; margin: 0px; vertical-align: middle; }
+svg.wdlbox { padding: 0px; border: 0px; margin: 0px; vertical-align: top; }
+
+
+/* Toolbar */
+div.toolbar { border: 1px solid white; padding: 4px 4px 4px 4px; }
+a.button { font-family: awesome; font-size: 24px; }
+a.button:hover { text-decoration: none; color: inherit; }
+form.toolbar { display: inline; }
+select.toolbar { position: relative; top: -7px; font-size: 7pt; }
+
+.win { }
+.lost { }
+.draw { }
+.team { white-space: nowrap; }
+.age { }
+.years { white-space: nowrap; }
+.date { white-space: nowrap; }
+.date_guess { white-space: nowrap; }
+.rank { font-family: FreeSans; }
+.comment { }
+.secondary { }
+.sectitle { font-weight: 700; } /* transparent did not work */
+.seed { white-space: nowrap; }
+.label { white-space: nowrap; }
+.location { }
+.minor { color: grey; font-size: 7pt; vertical-align: middle; }
