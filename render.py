@@ -123,7 +123,7 @@ class Render(walton.toolbar.IToolbar):
         :param int numLosses: Specifies the number of losses.
         '''
         totalMatches = numWins + numDraws + numLosses
-        self.html.add('<svg class="wdlbox" width="{}" height="{}">'.format(width, height))
+        self.html.add('<svg class="wdlbox" width="{}" height="{}" style="vertical-align: middle;">'.format(width, height))
         if totalMatches > 0:
             pixWin = int(round(width * numWins / totalMatches, 0))
             if numWins > 0:
@@ -150,6 +150,7 @@ class Render(walton.toolbar.IToolbar):
         '''
         # Decode the parameters.
         level = int(parameters['level']) if 'level' in parameters else 0
+        theDate = parameters['date'] if 'date' in parameters else None
 
         self.html.clear()
         # self.displayToolbar(True, None, 'home?firstyear={}&lastyear={}'.format(firstSeason-1, lastSeason-1), 'home?firstyear={}&lastyear={}'.format(firstSeason+1, lastSeason+1), False, True, False)
@@ -160,7 +161,12 @@ class Render(walton.toolbar.IToolbar):
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
 
-        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Administration</legend>')
+        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
+        if theDate is None:
+            self.html.add('Table')
+        else:
+            self.html.add(f'Table to {theDate}')
+        self.html.addLine('</legend>')
         self.html.addLine('<table>')
         if level == 1:
             self.html.addLine('<tr><td colspan="2">Team</td><td>P</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>Pts</td><td>Dif</td></tr>')
@@ -168,9 +174,21 @@ class Render(walton.toolbar.IToolbar):
             self.html.addLine('<tr><td colspan="2">Team</td><td>P</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>Pts</td><td>Dif</td></tr>')
 
         sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
-        sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES WHERE SEASON_ID = 1 GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+        sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
+        if theDate is None:
+            # All Results
+            sql += "WHERE SEASON_ID = 1 GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+        else:
+            # Up to the date.
+            sql += f"WHERE SEASON_ID = 1 AND THE_DATE <= '{theDate}' GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
         sql += "INNER JOIN "
-        sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES WHERE SEASON_ID = 1 GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+        sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
+        if theDate is None:
+            # All Results.
+            sql += "WHERE SEASON_ID = 1 GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+        else:
+            # Update to the date.
+            sql += f"WHERE SEASON_ID = 1 AND THE_DATE <= '{theDate}' GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
         sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
         sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
         # print(sql)
@@ -187,51 +205,67 @@ class Render(walton.toolbar.IToolbar):
             team = self.database.getTeam(row[0])
 
             count += 1
-            self.html.add(f'<td class="rank" style="text-align: right;">{count}</td>')
-            self.html.add(f'<td>{team.toHtml()}</td>')
+            self.html.add(f'<td class="rank" style="text-align: right; vertical-align: middle;">{count}</td>')
+            self.html.add(f'<td style="text-align: right;">{team.toHtml()}</td>')
 
-            self.html.add(f'<td style="text-align: right;">{row[1]+row[2]+row[3]+row[6]+row[7]+row[8]}</td>')
+            self.html.add(f'<td class="secondary" style="text-align: right;">{row[1] + row[2] + row[3] + row[6] + row[7] + row[8]}</td>')
 
             if level == 1:
                 # Combined home and away.
-                self.html.add(f'<td style="text-align: right;">{row[1] + row[6]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[2] + row[7]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[3] + row[8]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[4] + row[9]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[5] + row[10]}</td>')
+                self.html.add(f'<td class="win" style="text-align: right;">{row[1] + row[6]}</td>')
+                self.html.add(f'<td class="draw" style="text-align: right;">{row[2] + row[7]}</td>')
+                self.html.add(f'<td class="lost" style="text-align: right;">{row[3] + row[8]}</td>')
+                self.html.add(f'<td class="secondary" style="text-align: right;">{row[4] + row[9]}</td>')
+                self.html.add(f'<td class="secondary" style="text-align: right;">{row[5] + row[10]}</td>')
             else:
                 # Separate home and away.
-                self.html.add(f'<td style="text-align: right;">{row[1]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[2]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[3]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[4]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[5]}</td>')
+                self.html.add(f'<td class="win" style="text-align: right;">{row[1]}</td>')
+                self.html.add(f'<td class="draw" style="text-align: right;">{row[2]}</td>')
+                self.html.add(f'<td class="lost" style="text-align: right;">{row[3]}</td>')
+                self.html.add(f'<td class="secondary" style="text-align: right;">{row[4]}</td>')
+                self.html.add(f'<td class="secondary" style="text-align: right;">{row[5]}</td>')
 
-                self.html.add(f'<td style="text-align: right;">{row[6]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[7]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[8]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[9]}</td>')
-                self.html.add(f'<td style="text-align: right;">{row[10]}</td>')
+                self.html.add(f'<td class="win" style="text-align: right;">{row[6]}</td>')
+                self.html.add(f'<td class="draw" style="text-align: right;">{row[7]}</td>')
+                self.html.add(f'<td class="lost" style="text-align: right;">{row[8]}</td>')
+                self.html.add(f'<td class="secondary" style="text-align: right;">{row[9]}</td>')
+                self.html.add(f'<td class="secondary" style="text-align: right;">{row[10]}</td>')
 
             self.html.add(f'<td style="text-align: right;">{row[11]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[12]}</td>')
+            self.html.add(f'<td class="secondary" style="text-align: right;">{row[12]}</td>')
+
+            self.html.add('<td>')
+            self.drawWinDrawLossBox(200, 18, row[1] + row[6], row[2] + row[7], row[3] + row[8])
+            self.html.add('</td>')
 
             self.html.addLine('</tr>')
 
         self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
 
-        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Administration</legend>')
+        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
+        if theDate is None:
+            self.html.add('Recent Matches')
+        else:
+            self.html.add(f'Recent Matches to {theDate}')
+        self.html.addLine('</legend>')
         self.html.addLine('<table>')
-        sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
-        params = (1, )
+        if theDate is None:
+            # All Results.
+            sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
+            params = (1, )
+        else:
+            # Results up to date.
+            sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE <= ? ORDER BY THE_DATE DESC LIMIT 20;"
+            params = (1, theDate)
+
         cursor = cndb.execute(sql, params)
         for row in cursor:
             self.html.add('<tr>')
             homeTeam = self.database.getTeam(row[1])
             awayTeam = self.database.getTeam(row[2])
 
-            self.html.add(f'<td>{row[0]}</td>')
+            self.html.add(f'<td class="secondary"><a href="app:home?date={row[0]}">{row[0]}</a></td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
             self.html.add(f'<td>{row[3]}</td>')
             self.html.add(f'<td>{row[4]}</td>')
@@ -255,8 +289,6 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</td></tr></table>')
 
         # Set the page flags.
-        self.tournamentSelect = False
-        self.countrySelect = False
         self.levels = None
         self.clipboardText = None
 
