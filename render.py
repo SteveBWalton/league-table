@@ -148,21 +148,24 @@ class Render(walton.toolbar.IToolbar):
 
         :param string parametersString: Specify the request parameters as a string. The keys 'firstyear' and 'lastyear' are optional.
         '''
-        # Decode the parameters
-        firstYear = int(parameters['firstyear']) if 'firstyear' in parameters else None
-        lastYear = int(parameters['lastyear']) if 'lastyear' in parameters else None
+        # Decode the parameters.
+        level = int(parameters['level']) if 'level' in parameters else 0
 
         self.html.clear()
         # self.displayToolbar(True, None, 'home?firstyear={}&lastyear={}'.format(firstSeason-1, lastSeason-1), 'home?firstyear={}&lastyear={}'.format(firstSeason+1, lastSeason+1), False, True, False)
-        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, None, 'home', 'home', False, True, False)
+        toolbar = self.buildToolbarOptions(level, 'level', ((0, 'Default'), (1, 'Combined')), 'app:home', None)
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, None, 'home', 'home', False, True, False, toolbar)
         self.html.addLine('<h1>Home</h1>')
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
 
-        self.html.addLine('<fieldset><legend>Administration</legend>')
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Administration</legend>')
         self.html.addLine('<table>')
-        self.html.addLine('<tr><td colspan="2">Team</td><td>P</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>Pts</td><td>Dif</td></tr>')
+        if level == 1:
+            self.html.addLine('<tr><td colspan="2">Team</td><td>P</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>Pts</td><td>Dif</td></tr>')
+        else:
+            self.html.addLine('<tr><td colspan="2">Team</td><td>P</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>Pts</td><td>Dif</td></tr>')
 
         sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
         sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES WHERE SEASON_ID = 1 GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
@@ -175,7 +178,12 @@ class Render(walton.toolbar.IToolbar):
         cursor = cndb.execute(sql)
         count = 0
         for row in cursor:
-            self.html.add('<tr>')
+            if count <= 3:
+                self.html.add('<tr class="win2">')
+            elif count >= 17:
+                self.html.add('<tr class="lost2">')
+            else:
+                self.html.add('<tr>')
             team = self.database.getTeam(row[0])
 
             count += 1
@@ -184,17 +192,26 @@ class Render(walton.toolbar.IToolbar):
 
             self.html.add(f'<td style="text-align: right;">{row[1]+row[2]+row[3]+row[6]+row[7]+row[8]}</td>')
 
-            self.html.add(f'<td style="text-align: right;">{row[1]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[2]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[3]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[4]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[5]}</td>')
+            if level == 1:
+                # Combined home and away.
+                self.html.add(f'<td style="text-align: right;">{row[1] + row[6]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[2] + row[7]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[3] + row[8]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[4] + row[9]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[5] + row[10]}</td>')
+            else:
+                # Separate home and away.
+                self.html.add(f'<td style="text-align: right;">{row[1]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[2]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[3]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[4]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[5]}</td>')
 
-            self.html.add(f'<td style="text-align: right;">{row[6]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[7]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[8]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[9]}</td>')
-            self.html.add(f'<td style="text-align: right;">{row[10]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[6]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[7]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[8]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[9]}</td>')
+                self.html.add(f'<td style="text-align: right;">{row[10]}</td>')
 
             self.html.add(f'<td style="text-align: right;">{row[11]}</td>')
             self.html.add(f'<td style="text-align: right;">{row[12]}</td>')
@@ -204,9 +221,9 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
 
-        self.html.addLine('<fieldset><legend>Administration</legend>')
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Administration</legend>')
         self.html.addLine('<table>')
-        sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC;"
+        sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
         params = (1, )
         cursor = cndb.execute(sql, params)
         for row in cursor:
@@ -502,10 +519,24 @@ class Render(walton.toolbar.IToolbar):
         params = (1, teamIndex, teamIndex)
         cursor = cndb.execute(sql, params)
         for row in cursor:
-            self.html.add('<tr>')
             homeTeam = self.database.getTeam(row[1])
             awayTeam = self.database.getTeam(row[2])
+            if teamIndex == homeTeam.index:
+                if row[3] > row[4]:
+                    className = 'win2'
+                elif row[3] < row[4]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+            else:
+                if row[3] < row[4]:
+                    className = 'win2'
+                elif row[3] > row[4]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
 
+            self.html.add(f'<tr class="{className}">')
             self.html.add(f'<td>{row[0]}</td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
             self.html.add(f'<td>{row[3]}</td>')

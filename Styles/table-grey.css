@@ -12,6 +12,7 @@ div.toolbar { background-color: black; color: white; }
 .win2 { background-color: #CCFFCC;}
 .lost2 { background-color: #FFCCCC;}
 .draw { color: darkkhaki; }
+.draw2 { background-color: #E0E0E0; }
 .age { color: grey ;}
 .years { color: peru;  }
 .date { color: peru;  }
