@@ -150,12 +150,16 @@ class Render(walton.toolbar.IToolbar):
         '''
         # Decode the parameters.
         level = int(parameters['level']) if 'level' in parameters else 0
-        theDate = parameters['date'] if 'date' in parameters else None
+        theDate = parameters['date'] if 'date' in parameters else f'{datetime.date.today()}'
 
         self.html.clear()
         # self.displayToolbar(True, None, 'home?firstyear={}&lastyear={}'.format(firstSeason-1, lastSeason-1), 'home?firstyear={}&lastyear={}'.format(firstSeason+1, lastSeason+1), False, True, False)
-        toolbar = self.buildToolbarOptions(level, 'level', ((0, 'Default'), (1, 'Combined')), 'app:home', None)
-        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, None, 'home', 'home', False, True, False, toolbar)
+        toolbar = self.buildToolbarOptions(level, 'level', ((0, 'Default'), (1, 'Combined')), 'app:home', (('date', theDate), ))
+        if theDate is None:
+            self.editTarget = 'edit_date'
+        else:
+            self.editTarget = f'edit_date?date={theDate}'
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, 'home', 'home', False, True, False, toolbar)
         self.html.addLine('<h1>Home</h1>')
 
         # Connect to the database.
@@ -232,7 +236,7 @@ class Render(walton.toolbar.IToolbar):
                 self.html.add(f'<td class="secondary" style="text-align: right;">{row[10]}</td>')
 
             self.html.add(f'<td style="text-align: right;">{row[11]}</td>')
-            self.html.add(f'<td class="secondary" style="text-align: right;">{row[12]}</td>')
+            self.html.add(f'<td class="secondary" style="text-align: right;">{row[12]:+}</td>')
 
             self.html.add('<td>')
             self.drawWinDrawLossBox(200, 18, row[1] + row[6], row[2] + row[7], row[3] + row[8])
@@ -258,6 +262,31 @@ class Render(walton.toolbar.IToolbar):
             # Results up to date.
             sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE <= ? ORDER BY THE_DATE DESC LIMIT 20;"
             params = (1, theDate)
+
+        cursor = cndb.execute(sql, params)
+        for row in cursor:
+            self.html.add('<tr>')
+            homeTeam = self.database.getTeam(row[1])
+            awayTeam = self.database.getTeam(row[2])
+
+            self.html.add(f'<td class="secondary"><a href="app:home?date={row[0]}">{row[0]}</a></td>')
+            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+            self.html.add(f'<td>{row[3]}</td>')
+            self.html.add(f'<td>{row[4]}</td>')
+            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+            self.html.addLine('</tr>')
+
+        self.html.addLine('</table>')
+        self.html.addLine('</fieldset>')
+
+        # Future matches.
+        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
+        self.html.add(f'Future Matches after {theDate}')
+        self.html.addLine('</legend>')
+        self.html.addLine('<table>')
+        # Results after to date.
+        sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE > ? ORDER BY THE_DATE LIMIT 20;"
+        params = (1, theDate)
 
         cursor = cndb.execute(sql, params)
         for row in cursor:
@@ -541,7 +570,8 @@ class Render(walton.toolbar.IToolbar):
 
         # Initialise the display.
         self.html.clear()
-        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, 'edit_team?id={}'.format(teamIndex), None, None, True, True, False, '')
+        self.editTarget = f'edit_team?team={teamIndex}'
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, None, None, True, True, False, '')
 
         self.html.add(f'<p><span class="h1">{team.name}</span></p>')
 
@@ -582,3 +612,6 @@ class Render(walton.toolbar.IToolbar):
         # Close the database.
         cndb.close()
 
+        # Set the page flags.
+        self.nextPagePage = None
+        self.previousPage = None

@@ -60,7 +60,7 @@ import walton.glade.fullscreen
 #import walton.glade.edit_country
 #import glade.preferences
 #import glade.edit_team
-#import glade.edit_matches
+import glade.edit_matches
 #import glade.edit_sport
 #import glade.edit_tournament
 #import glade.edit_location
@@ -241,7 +241,8 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
 
         # Define the actions this module can handle and the function to handle the action.
         self.actions = {
-            'edit_season'       : self.editSeason,
+            'edit_date'         : self.editDate,
+            'edit_team'         : self.editTeam,
             'edit_matches'      : self.editMatches,
         }
 
@@ -899,22 +900,36 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
 
     def editTeam(self, parameters):
         '''
-        Displays the editTeam dialog.
-        Opens a dialog to allow the user to edit the specified team and writes the results into the database.
-
-        :var string parametersString: Specifies the parameters as a string. This should include a 'id' key that identifies the team to edit.
+        Displays the EditMatches dialog with initial matches on the specified date.
         '''
-        # Decode the parameters
-        teamIndex = int(parameters['id']) if 'id' in parameters else -1
+        teamIndex = parameters['team'] if 'team' in parameters else None
 
-        dialog = glade.edit_team.EditTeam(self.window)
-        if teamIndex == -1:
-            isChange = dialog.editNewTeam(self.database)
+        sql = f"SELECT ID, THE_DATE, 0 AS THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex} ORDER BY THE_DATE DESC;"
+
+        # Edit these matches.
+        dialog = glade.edit_matches.EditMatches(self.window)
+        if dialog.editMatches(self.database, sql):
+            self.render.showHome({'season': seasonIndex})
+        return True
+
+
+
+
+    def editDate(self, parameters):
+        '''
+        Displays the EditMatches dialog with initial matches on the specified date.
+        '''
+        theDate = parameters['date'] if 'date' in parameters else None
+
+        if theDate is None:
+            sql = "SELECT ID, THE_DATE, 0 AS THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES ORDER BY THE_DATE DESC LIMIT 20"
         else:
-            isChange = dialog.editTeam(self.database, teamIndex)
+            sql = f"SELECT ID, THE_DATE, 0 AS THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE THE_DATE = '{theDate}'"
 
-        # Return true if the dialog wrote updates, false otherwise.
-        return isChange
+        dialog = glade.edit_matches.EditMatches(self.window)
+        if dialog.editMatches(self.database, sql):
+            self.render.showHome({'season': seasonIndex})
+        return True
 
 
 

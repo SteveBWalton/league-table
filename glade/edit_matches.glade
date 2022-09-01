@@ -370,7 +370,7 @@
                             <property name="resizable">True</property>
                             <property name="title">Home Score</property>
                             <child>
-                              <object class="GtkCellRendererText" id="cellrenderertextScore">
+                              <object class="GtkCellRendererText" id="cellrenderertextHomeScore">
                                 <property name="editable">True</property>
                                 <signal name="edited" handler="on_cellrenderertextScore_edited" swapped="no"/>
                               </object>
@@ -385,9 +385,9 @@
                             <property name="resizable">True</property>
                             <property name="title">Away Score</property>
                             <child>
-                              <object class="GtkCellRendererText" id="cellrenderertextScore1">
+                              <object class="GtkCellRendererText" id="cellrenderertextAwayScore">
                                 <property name="editable">True</property>
-                                <signal name="edited" handler="on_cellrenderertextScore_edited" swapped="no"/>
+                                <signal name="edited" handler="on_cellrenderertextAwayScore_edited" swapped="no"/>
                               </object>
                               <attributes>
                                 <attribute name="text">9</attribute>
