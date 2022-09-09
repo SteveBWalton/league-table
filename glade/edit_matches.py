@@ -328,7 +328,7 @@ class EditMatches:
 
         # Using the '<None>' because in this version of GTK+3 the combobox will not scroll forward only backwards so start at the end!
         theYear = 2022
-        liststoreMatches.set(newRow, 0, 0, 1, 0, 2, '..-..-' + str(theYear), 3, True, 5, '<None>', 7, '<None>', 8, 0, 9, 0)
+        liststoreMatches.set(newRow, 0, 0, 1, 0, 2, '..-..-' + str(theYear), 3, False, 5, '<None>', 7, '<None>', 8, 0, 9, 0)
 
         # Get the number of results.
         count = 0
@@ -373,9 +373,9 @@ class EditMatches:
                 awayTeamFor = liststoreMatches.get_value(iterMatches, 9)
 
                 if matchIndex == 0:
-                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR) VALUES ({1}, {theDate}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor});"
+                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR) VALUES ({1}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor});"
                 else:
-                    sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
+                    sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
 
                 # Execute the command.
                 print(sql)

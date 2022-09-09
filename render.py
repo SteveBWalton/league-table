@@ -256,23 +256,27 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<table>')
         if theDate is None:
             # All Results.
-            sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
+            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
             params = (1, )
         else:
             # Results up to date.
-            sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE <= ? ORDER BY THE_DATE DESC LIMIT 20;"
+            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE <= ? ORDER BY THE_DATE DESC LIMIT 20;"
             params = (1, theDate)
 
         cursor = cndb.execute(sql, params)
         for row in cursor:
             self.html.add('<tr>')
-            homeTeam = self.database.getTeam(row[1])
-            awayTeam = self.database.getTeam(row[2])
+            theMatchDate = row[0]
+            isDateGuess = row[1] == 1
+            if isDateGuess:
+                theMatchDate = f'({row[0]})'
+            homeTeam = self.database.getTeam(row[2])
+            awayTeam = self.database.getTeam(row[3])
 
-            self.html.add(f'<td class="secondary"><a href="app:home?date={row[0]}">{row[0]}</a></td>')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?date={row[0]}">{theMatchDate}</a></td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
-            self.html.add(f'<td>{row[3]}</td>')
             self.html.add(f'<td>{row[4]}</td>')
+            self.html.add(f'<td>{row[5]}</td>')
             self.html.add(f'<td>{awayTeam.toHtml()}</td>')
             self.html.addLine('</tr>')
 
@@ -285,19 +289,23 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</legend>')
         self.html.addLine('<table>')
         # Results after to date.
-        sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE > ? ORDER BY THE_DATE LIMIT 20;"
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE > ? ORDER BY THE_DATE LIMIT 20;"
         params = (1, theDate)
 
         cursor = cndb.execute(sql, params)
         for row in cursor:
             self.html.add('<tr>')
-            homeTeam = self.database.getTeam(row[1])
-            awayTeam = self.database.getTeam(row[2])
+            theMatchDate = row[0]
+            isDateGuess = row[1] == 1
+            if isDateGuess:
+                theMatchDate = f'({row[0]})'
+            homeTeam = self.database.getTeam(row[2])
+            awayTeam = self.database.getTeam(row[3])
 
-            self.html.add(f'<td class="secondary"><a href="app:home?date={row[0]}">{row[0]}</a></td>')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?date={row[0]}">{theMatchDate}</a></td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
-            self.html.add(f'<td>{row[3]}</td>')
             self.html.add(f'<td>{row[4]}</td>')
+            self.html.add(f'<td>{row[5]}</td>')
             self.html.add(f'<td>{awayTeam.toHtml()}</td>')
             self.html.addLine('</tr>')
 
@@ -577,32 +585,36 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('<fieldset><legend>Administration</legend>')
         self.html.addLine('<table>')
-        sql = "SELECT THE_DATE, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) ORDER BY THE_DATE DESC;"
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) ORDER BY THE_DATE DESC;"
         params = (1, teamIndex, teamIndex)
         cursor = cndb.execute(sql, params)
         for row in cursor:
-            homeTeam = self.database.getTeam(row[1])
-            awayTeam = self.database.getTeam(row[2])
+            theMatchDate = row[0]
+            isDateGuess = row[1] == 1
+            if isDateGuess:
+                theMatchDate = f'({row[0]})'
+            homeTeam = self.database.getTeam(row[2])
+            awayTeam = self.database.getTeam(row[3])
             if teamIndex == homeTeam.index:
-                if row[3] > row[4]:
+                if row[4] > row[5]:
                     className = 'win2'
-                elif row[3] < row[4]:
+                elif row[4] < row[5]:
                     className = 'lost2'
                 else:
                     className = 'draw2'
             else:
-                if row[3] < row[4]:
+                if row[4] < row[5]:
                     className = 'win2'
-                elif row[3] > row[4]:
+                elif row[4] > row[5]:
                     className = 'lost2'
                 else:
                     className = 'draw2'
 
             self.html.add(f'<tr class="{className}">')
-            self.html.add(f'<td>{row[0]}</td>')
+            self.html.add(f'<td class="date" style="text-align: center;">{theMatchDate}</td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
-            self.html.add(f'<td>{row[3]}</td>')
             self.html.add(f'<td>{row[4]}</td>')
+            self.html.add(f'<td>{row[5]}</td>')
             self.html.add(f'<td>{awayTeam.toHtml()}</td>')
             self.html.addLine('</tr>')
 

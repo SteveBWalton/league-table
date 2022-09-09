@@ -922,9 +922,9 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         theDate = parameters['date'] if 'date' in parameters else None
 
         if theDate is None:
-            sql = "SELECT ID, THE_DATE, 0 AS THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES ORDER BY THE_DATE DESC LIMIT 20"
+            sql = "SELECT ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES ORDER BY THE_DATE DESC LIMIT 20"
         else:
-            sql = f"SELECT ID, THE_DATE, 0 AS THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE THE_DATE = '{theDate}'"
+            sql = f"SELECT ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE THE_DATE = '{theDate}'"
 
         dialog = glade.edit_matches.EditMatches(self.window)
         if dialog.editMatches(self.database, sql):
