@@ -378,7 +378,7 @@ class EditMatches:
                     sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
 
                 # Execute the command.
-                print(sql)
+                # print(sql)
                 # cursor = cnDb.execute(sql, params)
                 cursor = cndb.execute(sql)
                 cndb.commit()

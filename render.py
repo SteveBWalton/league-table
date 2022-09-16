@@ -563,6 +563,7 @@ class Render(walton.toolbar.IToolbar):
         '''
         # Decode the paramters.
         teamIndex = int(parameters['id']) if 'id' in parameters else 1
+        theDate = parameters['date'] if 'date' in parameters else f'{datetime.date.today()}'
         level = int(parameters['level']) if 'level' in parameters else 0
         isShowAge = True if 'age' in parameters else False
         firstYear = parameters['firstyear'] if 'firstyear' in parameters else None
@@ -585,8 +586,8 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('<fieldset><legend>Administration</legend>')
         self.html.addLine('<table>')
-        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) ORDER BY THE_DATE DESC;"
-        params = (1, teamIndex, teamIndex)
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
+        params = (1, teamIndex, teamIndex, theDate)
         cursor = cndb.execute(sql, params)
         for row in cursor:
             theMatchDate = row[0]
