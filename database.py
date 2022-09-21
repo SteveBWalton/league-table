@@ -19,7 +19,7 @@ import time
 # Application Libraries.
 import walton.database
 from team import Team
-# from season import Season
+from season import Season
 
 
 
@@ -107,7 +107,7 @@ class Database(walton.database.IDatabase):
             return self.seasons[seasonIndex]
 
         # Read from database.
-        season = Season(self, self.currentSport.index, seasonIndex)
+        season = Season(self)
         season.read(seasonIndex)
 
         # Store this season in the dictionary.

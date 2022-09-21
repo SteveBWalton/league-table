@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 '''
-Module to support teams in the table program.
-Each team is a row from the TEAMS table in the table database.
+Module to support seasons in the table program.
+Each team is a row from the SEASONS table in the table database.
 '''
 
 # Require the Sqlite3 library
@@ -20,16 +20,16 @@ import time
 
 
 
-class Team:
+class Season:
     '''
-    Class to represent a team in the table database.
-    Each team is a row from the TEAMS table in the table database.
+    Class to represent a season in the table database.
+    Each season is a row from the SEASONS table in the table database.
 
-    :ivar Database database: The database that contains this team.
-    :ivar int index: The ID of this team.
-    :ivar string name: The name or label for this team.
-    :ivar int firstYear: The first season with results for this team.
-    :ivar int lastYear: The last season with results for this team.
+    :ivar Database database: The database that contains this season.
+    :ivar int index: The ID of this season.
+    :ivar string name: The name or label for this season.
+    :ivar datetime.date startDate: The start date for this season.
+    :ivar datetime.date finishDate: The finish date for this season.
     :ivar string comments: Optional additional text description of the team.
     '''
 
@@ -37,7 +37,7 @@ class Team:
 
     def __init__(self, database):
         '''
-        Class constructor for the :py:class:`Team` class.
+        Class constructor for the :py:class:`Season` class.
 
         :param Database Database: Specifies the :py:class:`~database.Database` database that contains the team.
         '''
@@ -47,14 +47,8 @@ class Team:
         self.index = -1
         # The name or label for this team.
         self.name = 'Undefined'
-        # The first season with results for this team.
-        self.firstYear = -1
-        # The last season with results for this team.
-        self.lastYear = -1
         # Optional additional text description of the team.
         self.comments = None
-        # Optional url for a link for more information about this team.
-        self.internetUrl = None
 
 
 
@@ -100,28 +94,6 @@ class Team:
 
 
 
-    def getSpan(self, isHtmlFormat = True):
-        '''
-        Return the span of this team as a string.
-
-        :param bool isHtmlFormat: Optionally specifiy false to return the span in ascii, otherwise html format is used.
-        :returns: A human readable string that describes the range of active seasons for this team.
-        '''
-        if self.firstYear > 0 or self.lastYear > 0:
-            if isHtmlFormat:
-                html = '&nbsp;<span class="years">('
-            else:
-                html = ' ('
-            if self.firstYear > 0:
-                html += str(self.firstYear)
-            if self.lastYear > 0 and self.lastYear != self.firstYear:
-                html += '-' + str(self.lastYear)
-            html += ')'
-            if isHtmlFormat:
-                html += '</span>'
-        else:
-            html = ''
-        return html
 
 
 
@@ -134,7 +106,7 @@ class Team:
         cndb = sqlite3.connect(self.database.filename)
 
         # Fetch the links.
-        sql = 'SELECT LABEL, URL FROM LINKS WHERE TYPE_ID = 1 AND KEY_ID = ?;'
+        sql = 'SELECT LABEL, URL FROM LINKS WHERE TYPE_ID = 2 AND KEY_ID = ?;'
         params = (self.index, )
         cursor = cndb.execute(sql, params)
         for row in cursor:
@@ -149,18 +121,18 @@ class Team:
 
 
 
-    def read(self, teamIndex):
+    def read(self, seasonIndex):
         '''
-        Read this team from the database.
+        Read this season from the database.
 
-        :param int teamIndex: Specifies the index of the team to read.
+        :param int seasonIndex: Specifies the index of the season to read.
         '''
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
 
         # sql = 'SELECT Name, CountryID, DoB, DoD, FirstYear, LastYear, Comments, InternetURL FROM Teams WHERE ID = ?;'
-        sql = 'SELECT LABEL FROM TEAMS WHERE ID = ?;'
-        params = (teamIndex, )
+        sql = 'SELECT LABEL FROM SEASONS WHERE ID = ?;'
+        params = (seasonIndex, )
         cursor = cndb.execute(sql, params)
         row = cursor.fetchone()
         cursor.close()
@@ -170,22 +142,8 @@ class Team:
             print(params)
             return None
 
-        self.index = teamIndex
+        self.index = seasonIndex
         self.name = row[0]
-        #self.countryIndex = row[1]
-        #if row[2] == None:
-        #    self.dob = None
-        #else:
-        #    #oTeam.dob = datetime.strptime(row[2],'%Y-%m-%d')
-        #    self.dob = datetime.date(*time.strptime(row[2], "%Y-%m-%d")[:3])
-        #if row[3] == None:
-        #    self.dod = None
-        #else:
-        #    self.dod = datetime.date(*time.strptime(row[3], "%Y-%m-%d")[:3])
-        #self.firstYear = row[4]
-        #self.lastYear = row[5]
-        #self.comments = row[6]
-        #self.internetUrl = row[7]
 
         # Close the database.
         cndb.close()
@@ -193,14 +151,14 @@ class Team:
 
 
     def write(self):
-        ''' Write this team into the database. '''
+        ''' Write this season into the database. '''
         if self.index == -1:
             # Write a new record.
-            sql = 'INSERT INTO Teams(Name, SportID, CountryID, FirstYear, LastYear, DoB, DoD, Comments, InternetURL) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);'
+            sql = 'INSERT INTO SEASONS (Name, SportID, CountryID, FirstYear, LastYear, DoB, DoD, Comments, InternetURL) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);'
             params = (self.database.param(self.name, ''), self.database.currentSport.index, self.database.param(self.countryIndex, -1), self.firstYear, self.lastYear, self.dob, self.dod, self.database.param(self.comments, ''), self.database.param(self.internetUrl, ''))
         else:
             # Update an existing record.
-            sql = 'UPDATE TEAMS SET LABEL = ?, Comments = ? WHERE ID = ?;'
+            sql = 'UPDATE SEASONS SET LABEL = ?, COMMENTS = ? WHERE ID = ?;'
             params = (self.database.param(self.name, ''), self.database.param(self.comments, ''), self.index)
 
         if self.database.debug:
@@ -216,7 +174,7 @@ class Team:
 
         # Load the index if it not known.
         if self.index == -1:
-            sql = "SELECT MAX(ID) FROM TEAMS;"
+            sql = "SELECT MAX(ID) FROM SEASONS;"
             cursor = cndb.execute(sql)
             row = cursor.fetchone()
             cursor.close()

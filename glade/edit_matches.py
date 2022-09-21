@@ -373,7 +373,7 @@ class EditMatches:
                 awayTeamFor = liststoreMatches.get_value(iterMatches, 9)
 
                 if matchIndex == 0:
-                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR) VALUES ({1}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor});"
+                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR) VALUES ({self.seasonIndex}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor});"
                 else:
                     sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
 
@@ -444,6 +444,8 @@ class EditMatches:
             return
 
         # print 'Populate Matches Season {} TournamentID {}'.format(theYear,tournamentIndex)
+        entrySeason = self.builder.get_object('entrySeason')
+        entrySeason.set_text(self.seasonIndex)
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
@@ -453,7 +455,7 @@ class EditMatches:
 
         if sql == '':
             return
-        print(sql)
+        # print(sql)
 
         # Build the list of actual matches.
         liststoreMatches = self.builder.get_object('liststoreMatches')
@@ -489,7 +491,7 @@ class EditMatches:
 
 
 
-    def editMatches(self, database, sql):
+    def editMatches(self, database, sql, seasonIndex):
         '''
         Show the dialog and allow the user to edit the matches.
 
@@ -518,6 +520,7 @@ class EditMatches:
 
         # Save the parameters, initialise the class.
         self.database = database
+        self.seasonIndex = seasonIndex
 
         # Populate the list of matches.
         self.populateMatches(sql)

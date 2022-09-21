@@ -151,16 +151,25 @@ class Render(walton.toolbar.IToolbar):
         # Decode the parameters.
         level = int(parameters['level']) if 'level' in parameters else 0
         theDate = parameters['date'] if 'date' in parameters else f'{datetime.date.today()}'
+        seasonIndex = parameters['season'] if 'season' in parameters else 1
 
         self.html.clear()
         # self.displayToolbar(True, None, 'home?firstyear={}&lastyear={}'.format(firstSeason-1, lastSeason-1), 'home?firstyear={}&lastyear={}'.format(firstSeason+1, lastSeason+1), False, True, False)
         toolbar = self.buildToolbarOptions(level, 'level', ((0, 'Default'), (1, 'Combined')), 'app:home', (('date', theDate), ))
         if theDate is None:
-            self.editTarget = 'edit_date'
+            self.editTarget = f'edit_date?season={seasonIndex}'
         else:
-            self.editTarget = f'edit_date?date={theDate}'
-        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, 'home', 'home', False, True, False, toolbar)
-        self.html.addLine('<h1>Home</h1>')
+            self.editTarget = f'edit_date?season={seasonIndex}&date={theDate}'
+        if seasonIndex == 1:
+            nextSeason = 2
+            previousSeason = 2
+        else:
+            nextSeason = 1
+            previousSeason = 1
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, f'home?season={previousSeason}', f'home?season={nextSeason}', False, True, False, toolbar)
+
+        season = self.database.getSeason(seasonIndex)
+        self.html.addLine(f'<h1>{season.name} {seasonIndex}</h1>')
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
@@ -181,18 +190,18 @@ class Render(walton.toolbar.IToolbar):
         sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
         if theDate is None:
             # All Results
-            sql += "WHERE SEASON_ID = 1 GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+            sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
         else:
             # Up to the date.
-            sql += f"WHERE SEASON_ID = 1 AND THE_DATE <= '{theDate}' GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+            sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
         sql += "INNER JOIN "
         sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
         if theDate is None:
             # All Results.
-            sql += "WHERE SEASON_ID = 1 GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+            sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
         else:
             # Update to the date.
-            sql += f"WHERE SEASON_ID = 1 AND THE_DATE <= '{theDate}' GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+            sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
         sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
         sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
         # print(sql)
@@ -257,11 +266,11 @@ class Render(walton.toolbar.IToolbar):
         if theDate is None:
             # All Results.
             sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
-            params = (1, )
+            params = (seasonIndex, )
         else:
             # Results up to date.
             sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE <= ? ORDER BY THE_DATE DESC LIMIT 20;"
-            params = (1, theDate)
+            params = (seasonIndex, theDate)
 
         cursor = cndb.execute(sql, params)
         for row in cursor:
@@ -273,7 +282,7 @@ class Render(walton.toolbar.IToolbar):
             homeTeam = self.database.getTeam(row[2])
             awayTeam = self.database.getTeam(row[3])
 
-            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?date={row[0]}">{theMatchDate}</a></td>')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={seasonIndex}&date={row[0]}">{theMatchDate}</a></td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
             self.html.add(f'<td>{row[4]}</td>')
             self.html.add(f'<td>{row[5]}</td>')
@@ -290,7 +299,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<table>')
         # Results after to date.
         sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE > ? ORDER BY THE_DATE LIMIT 20;"
-        params = (1, theDate)
+        params = (seasonIndex, theDate)
 
         cursor = cndb.execute(sql, params)
         for row in cursor:
@@ -302,7 +311,7 @@ class Render(walton.toolbar.IToolbar):
             homeTeam = self.database.getTeam(row[2])
             awayTeam = self.database.getTeam(row[3])
 
-            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?date={row[0]}">{theMatchDate}</a></td>')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={seasonIndex}&date={row[0]}">{theMatchDate}</a></td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
             self.html.add(f'<td>{row[4]}</td>')
             self.html.add(f'<td>{row[5]}</td>')
@@ -586,8 +595,8 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('<fieldset><legend>Administration</legend>')
         self.html.addLine('<table>')
-        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
-        params = (1, teamIndex, teamIndex, theDate)
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
+        params = (teamIndex, teamIndex, theDate)
         cursor = cndb.execute(sql, params)
         for row in cursor:
             theMatchDate = row[0]
