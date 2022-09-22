@@ -80,6 +80,7 @@ class Render(walton.toolbar.IToolbar):
             'index'             : self.showIndex,
             'preferences'       : self.showPreferences,
             'show_team'         : self.showTeam,
+            'head'              : self.showHeadToHead
         }
 
 
@@ -155,7 +156,7 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.clear()
         # self.displayToolbar(True, None, 'home?firstyear={}&lastyear={}'.format(firstSeason-1, lastSeason-1), 'home?firstyear={}&lastyear={}'.format(firstSeason+1, lastSeason+1), False, True, False)
-        toolbar = self.buildToolbarOptions(level, 'level', ((0, 'Default'), (1, 'Combined')), 'app:home', (('date', theDate), ))
+        toolbar = self.buildToolbarOptions(level, 'level', ((0, 'Default'), (1, 'Combined')), 'app:home', (('date', theDate), ('season', seasonIndex) ))
         if theDate is None:
             self.editTarget = f'edit_date?season={seasonIndex}'
         else:
@@ -170,6 +171,25 @@ class Render(walton.toolbar.IToolbar):
 
         season = self.database.getSeason(seasonIndex)
         self.html.addLine(f'<h1>{season.name} {seasonIndex}</h1>')
+        links = season.getLinks()
+        if season.comments is not None or len(links) > 0:
+            self.html.add('<p>')
+            if season.comments is not None:
+                self.html.add('{} '.format(team.comments))
+            if len(links) > 0:
+                self.html.add('<span class="label">More information at</span>')
+                count = 0
+                for linkLabel in links:
+                    count += 1
+                    if count == 1:
+                        self.html.add(' ')
+                    elif count == len(links):
+                        self.html.add(' <span class="label">and</span> ')
+                    else:
+                        self.html.add('<span class="label">,</span> ')
+                    self.html.add('<a href="{}">{}</a>'.format(links[linkLabel], linkLabel))
+                self.html.add('. ')
+            self.html.add('</p>')
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
@@ -182,9 +202,9 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</legend>')
         self.html.addLine('<table>')
         if level == 1:
-            self.html.addLine('<tr><td colspan="2">Team</td><td>P</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>Pts</td><td>Dif</td></tr>')
+            self.html.addLine('<tr><td colspan="2">Team</td><td style="text-align: right;">P</td><td style="text-align: right;">W</td><td style="text-align: right;">D</td><td style="text-align: right;">L</td><td style="text-align: right;">F</td><td style="text-align: right;">A</td><td style="text-align: right;">Pts</td><td style="text-align: right;">Dif</td></tr>')
         else:
-            self.html.addLine('<tr><td colspan="2">Team</td><td>P</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>W</td><td>D</td><td>L</td><td>F</td><td>A</td><td>Pts</td><td>Dif</td></tr>')
+            self.html.addLine('<tr><td colspan="2">Team</td><td style="text-align: right;">P</td><td style="text-align: right;">W</td><td style="text-align: right;">D</td><td style="text-align: right;">L</td><td style="text-align: right;">F</td><td style="text-align: right;">A</td><td style="text-align: right;">W</td><td style="text-align: right;">D</td><td style="text-align: right;">L</td><td style="text-align: right;">F</td><td style="text-align: right;">A</td><td style="text-align: right;">Pts</td><td style="text-align: right;">Dif</td></tr>')
 
         sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
         sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
@@ -598,6 +618,7 @@ class Render(walton.toolbar.IToolbar):
         sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
         params = (teamIndex, teamIndex, theDate)
         cursor = cndb.execute(sql, params)
+        seasonIndex = 1
         for row in cursor:
             theMatchDate = row[0]
             isDateGuess = row[1] == 1
@@ -606,6 +627,75 @@ class Render(walton.toolbar.IToolbar):
             homeTeam = self.database.getTeam(row[2])
             awayTeam = self.database.getTeam(row[3])
             if teamIndex == homeTeam.index:
+                if row[4] > row[5]:
+                    className = 'win2'
+                elif row[4] < row[5]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+            else:
+                if row[4] < row[5]:
+                    className = 'win2'
+                elif row[4] > row[5]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+
+            if row[6] != seasonIndex:
+                seasonIndex = row[6]
+                self.html.add(f'<tr class="{className}" style="border-top: 3px solid black;">')
+            else:
+                self.html.add(f'<tr class="{className}">')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={row[6]}&date={row[0]}">{theMatchDate}</a></td>')
+            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+            self.html.add(f'<td>{row[4]}</td>')
+            self.html.add(f'<td>{row[5]}</td>')
+            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+            self.html.add(f'<td><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}">HEAD</a></td>')
+            self.html.addLine('</tr>')
+
+        self.html.addLine('</table>')
+        self.html.addLine('</fieldset>')
+
+        # Close the database.
+        cndb.close()
+
+        # Set the page flags.
+        self.nextPagePage = None
+        self.previousPage = None
+
+
+
+    def showHeadToHead(self,parameters):
+        team1Index = int(parameters['team1'])
+        team2Index = int(parameters['team2'])
+
+        # Connect to the database.
+        cndb = sqlite3.connect(self.database.filename)
+
+        team1 = self.database.getTeam(team1Index)
+        team2 = self.database.getTeam(team2Index)
+
+        # Initialise the display.
+        self.html.clear()
+        self.editTarget = None
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, None, None, True, True, False, '')
+
+        self.html.add(f'<p><span class="h1">{team1.name} vs {team2.name}</span></p>')
+
+        self.html.addLine('<fieldset><legend>Matches</legend>')
+        self.html.addLine('<table>')
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? AND AWAY_TEAM_ID = ?) OR (HOME_TEAM_ID = ? AND AWAY_TEAM_ID = ?) ORDER BY THE_DATE DESC;"
+        params = (team1Index, team2Index, team2Index, team1Index)
+        cursor = cndb.execute(sql, params)
+        for row in cursor:
+            theMatchDate = row[0]
+            isDateGuess = row[1] == 1
+            if isDateGuess:
+                theMatchDate = f'({row[0]})'
+            homeTeam = self.database.getTeam(row[2])
+            awayTeam = self.database.getTeam(row[3])
+            if team1Index == homeTeam.index:
                 if row[4] > row[5]:
                     className = 'win2'
                 elif row[4] < row[5]:
