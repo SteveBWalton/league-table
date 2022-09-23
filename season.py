@@ -49,51 +49,31 @@ class Season:
         self.name = 'Undefined'
         # Optional additional text description of the team.
         self.comments = None
+        # The start date of the season.
+        self.startDate = None
+        # The finish date of the season.
+        self.finishDate = None
+        # The index of the next season.
+        self._nextSeasonIndex = None
+        # The index of the previous season.
+        self._previousSeasonIndex = None
 
 
 
-    def toHtml(self, addLink=True, showYears=False, ageDate = None, headLinkID = None):
+    def toHtml(self):
         '''
         Returns the team name in html format.
-
-        :param bool addLink: Specify true to wrap the team name in link.
-        :param bool showYears: Specify true to add the active teams for the team after the team name.
-        :param date ageDate: Optionally specify the date to display the teams age on.
-        :param int headLinkID: Optionally specify the ID of a team to link to the head to head results from.
         '''
-        # Add a link ( if requested )
-        if addLink:
-            if headLinkID == None:
-                html = '<a href="app:show_team?id={}">'.format(self.index)
-            else:
-                html = '<a href="app:head_head?team1={}&team2={}">'.format(headLinkID, self.index)
-            html += '<span class="team">'
-        else:
-            html = ''
+        # Add a link.
+        html = '<a href="app:home?season={}">'.format(self.index)
 
         # Add the actual name
         html += self.name
 
-        if addLink:
-            html += '</span>'
-            # Temporary fix for the antialaising length problem
-            # html += '&nbsp;'
-            html += '</a>'
-
-        if ageDate != None:
-            # html += ' ({} {} {})'.format(ageDate,self.dob,self.Age(ageDate))
-            nAge = self.getAge(ageDate)
-            if nAge > 0:
-                html += '&nbsp;<span class="age" style="vertical-align: middle;">({})</span>'.format(nAge)
-
-        if showYears:
-            html += self.getSpan(addLink)
+        html += '</a>'
 
         # Return the construction
         return html
-
-
-
 
 
 
@@ -131,7 +111,7 @@ class Season:
         cndb = sqlite3.connect(self.database.filename)
 
         # sql = 'SELECT Name, CountryID, DoB, DoD, FirstYear, LastYear, Comments, InternetURL FROM Teams WHERE ID = ?;'
-        sql = 'SELECT LABEL FROM SEASONS WHERE ID = ?;'
+        sql = 'SELECT LABEL, START_DATE, FINISH_DATE, COMMENTS FROM SEASONS WHERE ID = ?;'
         params = (seasonIndex, )
         cursor = cndb.execute(sql, params)
         row = cursor.fetchone()
@@ -144,6 +124,18 @@ class Season:
 
         self.index = seasonIndex
         self.name = row[0]
+        self.startDate = datetime.date(*time.strptime(row[1], "%Y-%m-%d")[:3]) if row[1] is not None else None
+        self.finishDate = datetime.date(*time.strptime(row[2], "%Y-%m-%d")[:3]) if row[2] is not None else None
+        self.comments = row[3]
+
+        # For debugging.
+        if self.index == 1:
+            self._previousSeasonIndex = 2
+        elif self.index == 2:
+            self._nextSeasonIndex = 1
+            self._previousSeasonIndex = 3
+        elif self.index == 3:
+            self._nextSeasonIndex = 2
 
         # Close the database.
         cndb.close()
@@ -158,8 +150,8 @@ class Season:
             params = (self.database.param(self.name, ''), self.database.currentSport.index, self.database.param(self.countryIndex, -1), self.firstYear, self.lastYear, self.dob, self.dod, self.database.param(self.comments, ''), self.database.param(self.internetUrl, ''))
         else:
             # Update an existing record.
-            sql = 'UPDATE SEASONS SET LABEL = ?, COMMENTS = ? WHERE ID = ?;'
-            params = (self.database.param(self.name, ''), self.database.param(self.comments, ''), self.index)
+            sql = 'UPDATE SEASONS SET LABEL = ?, COMMENTS = ?, START_DATE = ?, FINISH_DATE = ? WHERE ID = ?;'
+            params = (self.database.param(self.name, ''), self.database.param(self.comments, ''), self.startDate, self.finishDate, self.index)
 
         if self.database.debug:
             print(sql)
@@ -185,3 +177,19 @@ class Season:
 
         # Return success.
         return True
+
+
+
+    def getNextSeasonIndex(self):
+        ''' Returns the index of the next season or none. '''
+        if self._nextSeasonIndex is not None:
+            return self._nextSeasonIndex
+        return None
+
+
+
+    def getPreviousSeasonIndex(self):
+        '''  Returns the index of the previous season or none. '''
+        if self._previousSeasonIndex is not None:
+            return self._previousSeasonIndex
+        return None

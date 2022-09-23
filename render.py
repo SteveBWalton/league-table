@@ -151,8 +151,15 @@ class Render(walton.toolbar.IToolbar):
         '''
         # Decode the parameters.
         level = int(parameters['level']) if 'level' in parameters else 0
-        theDate = parameters['date'] if 'date' in parameters else f'{datetime.date.today()}'
-        seasonIndex = parameters['season'] if 'season' in parameters else 1
+        seasonIndex = int(parameters['season']) if 'season' in parameters else 1
+        if 'date' in parameters:
+            print(parameters['date'])
+        theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
+
+        # Check the the date is in season range.
+        season = self.database.getSeason(seasonIndex)
+        if theDate > season.finishDate:
+            theDate = None
 
         self.html.clear()
         # self.displayToolbar(True, None, 'home?firstyear={}&lastyear={}'.format(firstSeason-1, lastSeason-1), 'home?firstyear={}&lastyear={}'.format(firstSeason+1, lastSeason+1), False, True, False)
@@ -161,23 +168,25 @@ class Render(walton.toolbar.IToolbar):
             self.editTarget = f'edit_date?season={seasonIndex}'
         else:
             self.editTarget = f'edit_date?season={seasonIndex}&date={theDate}'
-        if seasonIndex == 1:
-            nextSeason = 2
-            previousSeason = 2
+        if season.getPreviousSeasonIndex() is None:
+            previousSeason = None
         else:
-            nextSeason = 1
-            previousSeason = 1
-        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, f'home?season={previousSeason}', f'home?season={nextSeason}', False, True, False, toolbar)
+            previousSeason = f'home?season={season.getPreviousSeasonIndex()}'
+        if season.getNextSeasonIndex() is None:
+            nextSeason = None
+        else:
+            nextSeason = f'home?season={season.getNextSeasonIndex()}'
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, previousSeason, nextSeason, False, True, False, toolbar)
 
-        season = self.database.getSeason(seasonIndex)
-        self.html.addLine(f'<h1>{season.name} {seasonIndex}</h1>')
+        self.html.add(f'<p><span class="h1">{season.name} {seasonIndex}</span>')
+        self.html.add(f' <span class="label">from</span> {self.database.formatDate(season.startDate)} <span class="label">to</span> {self.database.formatDate(season.finishDate)}.')
         links = season.getLinks()
         if season.comments is not None or len(links) > 0:
-            self.html.add('<p>')
+            #self.html.add('<p>')
             if season.comments is not None:
-                self.html.add('{} '.format(team.comments))
+                self.html.add(' {}'.format(team.comments))
             if len(links) > 0:
-                self.html.add('<span class="label">More information at</span>')
+                self.html.add(' <span class="label">More information at</span>')
                 count = 0
                 for linkLabel in links:
                     count += 1
@@ -189,16 +198,17 @@ class Render(walton.toolbar.IToolbar):
                         self.html.add('<span class="label">,</span> ')
                     self.html.add('<a href="{}">{}</a>'.format(links[linkLabel], linkLabel))
                 self.html.add('. ')
-            self.html.add('</p>')
+            #self.html.add('</p>')
+        self.html.addLine('</p>')
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
 
         self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
         if theDate is None:
-            self.html.add('Table')
+            self.html.add('Final Table')
         else:
-            self.html.add(f'Table to {theDate}')
+            self.html.add(f'Table to {self.database.formatDate(theDate)}')
         self.html.addLine('</legend>')
         self.html.addLine('<table>')
         if level == 1:
@@ -278,9 +288,9 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
         if theDate is None:
-            self.html.add('Recent Matches')
+            self.html.add('Final Matches')
         else:
-            self.html.add(f'Recent Matches to {theDate}')
+            self.html.add(f'Matches to {self.database.formatDate(theDate)}')
         self.html.addLine('</legend>')
         self.html.addLine('<table>')
         if theDate is None:
@@ -293,16 +303,26 @@ class Render(walton.toolbar.IToolbar):
             params = (seasonIndex, theDate)
 
         cursor = cndb.execute(sql, params)
+        lastDate = None
         for row in cursor:
-            self.html.add('<tr>')
-            theMatchDate = row[0]
+            theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
+            formatMatchDate = self.database.formatDate(theMatchDate)
             isDateGuess = row[1] == 1
             if isDateGuess:
-                theMatchDate = f'({row[0]})'
+                formatMatchDate = f'({row[0]})'
             homeTeam = self.database.getTeam(row[2])
             awayTeam = self.database.getTeam(row[3])
 
-            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={seasonIndex}&date={row[0]}">{theMatchDate}</a></td>')
+            if lastDate != row[0]:
+                if lastDate is None:
+                    self.html.add('<tr>')
+                else:
+                    self.html.add('<tr style="border-top: 1px solid black;">')
+                self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={seasonIndex}&date={row[0]}">{formatMatchDate}</a></td>')
+                lastDate = row[0]
+            else:
+                self.html.add('<tr>')
+                self.html.add('<td></td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
             self.html.add(f'<td>{row[4]}</td>')
             self.html.add(f'<td>{row[5]}</td>')
@@ -313,33 +333,34 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
 
         # Future matches.
-        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
-        self.html.add(f'Future Matches after {theDate}')
-        self.html.addLine('</legend>')
-        self.html.addLine('<table>')
-        # Results after to date.
-        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE > ? ORDER BY THE_DATE LIMIT 20;"
-        params = (seasonIndex, theDate)
+        if theDate is not None:
+            self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
+            self.html.add(f'Matches after {self.database.formatDate(theDate)}')
+            self.html.addLine('</legend>')
+            self.html.addLine('<table>')
+            # Results after to date.
+            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE > ? ORDER BY THE_DATE LIMIT 20;"
+            params = (seasonIndex, theDate)
 
-        cursor = cndb.execute(sql, params)
-        for row in cursor:
-            self.html.add('<tr>')
-            theMatchDate = row[0]
-            isDateGuess = row[1] == 1
-            if isDateGuess:
-                theMatchDate = f'({row[0]})'
-            homeTeam = self.database.getTeam(row[2])
-            awayTeam = self.database.getTeam(row[3])
+            cursor = cndb.execute(sql, params)
+            for row in cursor:
+                self.html.add('<tr>')
+                theMatchDate = row[0]
+                isDateGuess = row[1] == 1
+                if isDateGuess:
+                    theMatchDate = f'({row[0]})'
+                homeTeam = self.database.getTeam(row[2])
+                awayTeam = self.database.getTeam(row[3])
 
-            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={seasonIndex}&date={row[0]}">{theMatchDate}</a></td>')
-            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
-            self.html.add(f'<td>{row[4]}</td>')
-            self.html.add(f'<td>{row[5]}</td>')
-            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
-            self.html.addLine('</tr>')
+                self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={seasonIndex}&date={row[0]}">{theMatchDate}</a></td>')
+                self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+                self.html.add(f'<td>{row[4]}</td>')
+                self.html.add(f'<td>{row[5]}</td>')
+                self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+                self.html.addLine('</tr>')
 
-        self.html.addLine('</table>')
-        self.html.addLine('</fieldset>')
+            self.html.addLine('</table>')
+            self.html.addLine('</fieldset>')
 
         # Close the database.
         cndb.close()
@@ -689,10 +710,11 @@ class Render(walton.toolbar.IToolbar):
         params = (team1Index, team2Index, team2Index, team1Index)
         cursor = cndb.execute(sql, params)
         for row in cursor:
-            theMatchDate = row[0]
+            theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
+            formatMatchDate = self.database.formatDate(theMatchDate)
             isDateGuess = row[1] == 1
             if isDateGuess:
-                theMatchDate = f'({row[0]})'
+                formatMatchDate = f'({row[0]})'
             homeTeam = self.database.getTeam(row[2])
             awayTeam = self.database.getTeam(row[3])
             if team1Index == homeTeam.index:
@@ -711,7 +733,7 @@ class Render(walton.toolbar.IToolbar):
                     className = 'draw2'
 
             self.html.add(f'<tr class="{className}">')
-            self.html.add(f'<td class="date" style="text-align: center;">{theMatchDate}</td>')
+            self.html.add(f'<td class="date" style="text-align: center;">{formatMatchDate}</td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
             self.html.add(f'<td>{row[4]}</td>')
             self.html.add(f'<td>{row[5]}</td>')
