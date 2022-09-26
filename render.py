@@ -641,10 +641,12 @@ class Render(walton.toolbar.IToolbar):
         cursor = cndb.execute(sql, params)
         seasonIndex = 1
         for row in cursor:
-            theMatchDate = row[0]
+            theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
             isDateGuess = row[1] == 1
             if isDateGuess:
-                theMatchDate = f'({row[0]})'
+                formatMatchDate = f'({row[0]})'
+            else:
+                formatMatchDate = self.database.formatDate(theMatchDate)
             homeTeam = self.database.getTeam(row[2])
             awayTeam = self.database.getTeam(row[3])
             if teamIndex == homeTeam.index:
@@ -667,12 +669,12 @@ class Render(walton.toolbar.IToolbar):
                 self.html.add(f'<tr class="{className}" style="border-top: 3px solid black;">')
             else:
                 self.html.add(f'<tr class="{className}">')
-            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={row[6]}&date={row[0]}">{theMatchDate}</a></td>')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:home?season={row[6]}&date={row[0]}">{formatMatchDate}</a></td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
             self.html.add(f'<td>{row[4]}</td>')
             self.html.add(f'<td>{row[5]}</td>')
             self.html.add(f'<td>{awayTeam.toHtml()}</td>')
-            self.html.add(f'<td><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}">HEAD</a></td>')
+            self.html.add(f'<td title="Head to Head"><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}"><i class="fas fa-user"></i></a></td>')
             self.html.addLine('</tr>')
 
         self.html.addLine('</table>')
@@ -713,7 +715,7 @@ class Render(walton.toolbar.IToolbar):
             theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
             formatMatchDate = self.database.formatDate(theMatchDate)
             isDateGuess = row[1] == 1
-            if isDateGuess:
+            if isDateGuess or theMatchDate > datetime.date.today():
                 formatMatchDate = f'({row[0]})'
             homeTeam = self.database.getTeam(row[2])
             awayTeam = self.database.getTeam(row[3])
