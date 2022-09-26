@@ -152,8 +152,8 @@ class Render(walton.toolbar.IToolbar):
         # Decode the parameters.
         level = int(parameters['level']) if 'level' in parameters else 0
         seasonIndex = int(parameters['season']) if 'season' in parameters else 1
-        if 'date' in parameters:
-            print(parameters['date'])
+        # if 'date' in parameters:
+        #    print(parameters['date'])
         theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
 
         # Check the the date is in season range.
