@@ -385,34 +385,24 @@ class Render(walton.toolbar.IToolbar):
         ''' Render the index on the html object. '''
         self.html.clear()
         self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, None, None, None, False, False, False)
-        self.html.addLine('<h1>Sports Results Database: {}</h1>'.format(self.database.currentSport.name))
+        self.html.addLine('<h1>Table Database</h1>')
 
         self.html.addLine('<fieldset>')
         self.html.addLine('<legend>General</legend>')
         self.html.addLine('<ul>')
         self.html.addLine('<li><a href="app:tournament_winners">Tournament Results</a></li>')
         self.html.addLine('<li><a href="app:show_season">Season Results</a></li>')
-        self.html.addLine('<li><a href="app:table_teams">Table of {}</a></li>'.format(self.database.currentSport.plural))
+        self.html.addLine('<li><a href="app:table_teams">Table of Teams</a></li>')
         self.html.addLine('<li><a href="app:table_matches">Table of Match Wins</a></li>')
-        if self.database.currentSport.tableNations:
-            self.html.addLine('<li><a href="app:table_nations">Table of Nations</a></li>')
-            self.html.addLine('<li><a href="app:table_nation_matches">Table of Nation Match Wins</a></li>')
-        self.html.addLine('<li><a href="app:table_teams?orderby=1">{} by Date of Birth</a></li>'.format(self.database.currentSport.plural))
         self.html.addLine('<li><a href="app:list_matches">List of Matches</a></li>')
         self.html.addLine('<li><a href="app:table_headtohead">Table of Head to Heads</a></li>')
-        self.html.addLine('<li><a href="app:table_championage">Table of Age of Champions</a></li>')
-        self.html.addLine('<li><a href="app:table_locations">Table of Locations</a></li>')
         self.html.addLine('</ul>')
         self.html.addLine('</fieldset>')
 
         self.html.addLine('<fieldset>')
         self.html.addLine('<legend>Administration</legend>')
         self.html.addLine('<ul>')
-        self.html.addLine('<li><a href="app:switch_sports">Switch Sports</a></li>')
         self.html.addLine('<li><a href="app:preferences">Preferences</a></li>')
-        self.html.addLine('<li><a href="app:configure_sport">Configure Sport</a></li>')
-        self.html.addLine('<li><a href="app:maintenence">Database Maintenance</a></li>')
-        self.html.addLine('<li><a href="app:country_db">Country Database</a></li>')
         self.html.addLine('</ul>')
 
         # Set the page flags

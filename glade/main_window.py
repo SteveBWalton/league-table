@@ -195,9 +195,6 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         menuLevels = self.builder.get_object('menuLevels')
         menutoolbuttonLevel = self.builder.get_object('menutoolbuttonLevel')
         menutoolbuttonLevel.set_menu(menuLevels)
-        menuTournaments = self.builder.get_object('menuTournaments')
-        tbmenuTournament = self.builder.get_object('tbmenuTournament')
-        tbmenuTournament.set_menu(menuTournaments)
 
         # The application object for the sports results database.
         self.application = application
@@ -699,11 +696,6 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         '''
         parametersString = self.parameters
 
-        # Check for the age flag.
-        toolbuttonAge = self.builder.get_object('toolbuttonAge')
-        if toolbuttonAge.get_active():
-            parametersString += '&age=show'
-
         # Check for a year range.
         #if not self.yearRange.allYears:
         #    parametersString += '&firstyear={}&lastyear={}'.format(self.yearRange.firstYear, self.yearRange.lastYear)
@@ -816,34 +808,6 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             toolbuttonPrevious.set_sensitive(True)
             menuitemViewPrevious.set_sensitive(True)
 
-        # Enable / Disable the Age button.
-        #toolbuttonAge = self.builder.get_object('toolbuttonAge')
-        #if self.render.showAge and self.database.currentSport.birthdates:
-        #    toolbuttonAge.set_sensitive(True)
-        #else:
-        #    toolbuttonAge.set_sensitive(False)
-        #    toolbuttonAge.set_active(False)
-
-        # Enable / Disable the tournaments menu system.
-        #tbmenuTournament = self.builder.get_object('tbmenuTournament')
-        #if self.render.tournamentSelect and len(self.database.currentSport.tournamentsByStatus)>1:
-        #    # Check that the menu options are upto date
-        #    if self.tournamentSportIndex != self.database.currentSport.index:
-        #        for nIndex in [1, 2, 3, 4]:
-        #            menuTourament = self.builder.get_object('menuTournament'+str(nIndex))
-        #            if len(self.database.currentSport.tournamentsByStatus) >= nIndex:
-        #                tournament = #self.database.getTournament(self.database.currentSport.tournamentsByStatus[nIndex-1])
-        #                menuTourament.set_visible(True)
-        #                menuTourament.set_label(tournament.name)
-        #            else:
-        #                menuTourament.set_visible(False)
-        #        self.tournamentSportIndex=self.database.currentSport.index
-        #    tbmenuTournament.set_sensitive(True)
-        #else:
-        #    tbmenuTournament.set_label('All Tournaments')
-        #    tbmenuTournament.set_sensitive(False)
-        #    self.selectedTournamentIndex = None
-
         # Enable / Disable the levels menu system.
         menutoolbuttonLevel = self.builder.get_object('menutoolbuttonLevel')
         if self.render.levels == None:
@@ -860,22 +824,13 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
                     menuitemLevel.set_visible(False)
             menutoolbuttonLevel.set_sensitive(True)
 
-        # Enable / Disable the country select button.
-        tbbCountry = self.builder.get_object('tbbCountry')
-        if self.render.countrySelect:
-            tbbCountry.set_sensitive(True)
-        else:
-            tbbCountry.set_label('All Countries')
-            tbbCountry.set_sensitive(False)
-            self.selectedCountryIndex = None
-
         # Enable / Disable the year range button.
         tbbYears = self.builder.get_object('tbbYears')
         if self.render.yearsSelect:
             tbbYears.set_sensitive(True)
         else:
             tbbYears.set_label('All Years')
-            self.yearRange.allYears = True
+            # self.yearRange.allYears = True
             tbbYears.set_sensitive(False)
 
         # Enable / Disable the copy menu item.
@@ -886,12 +841,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             menuEditCopy.set_sensitive(False)
 
         # Display the html content on the webview control.
-        #if _useWebKit2:
         self.webview.load_html(self.render.html.toHtml(), 'file:///')
-
-        # self.webview.loadData(self.render.html.toHtml(),'text/html', 'UTF-8')
-        #else:
-        #    self.webview.load_string(self.render.html.toHtml(), 'text/html', 'UTF-8', 'file:///')
 
         # Events / signals back on.
         self.noEvents -= 1
