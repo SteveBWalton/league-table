@@ -10,6 +10,7 @@ import sys
 import sqlite3
 import datetime
 import time
+import math
 
 # Import my own libraries.
 import walton.html
@@ -144,7 +145,7 @@ class Render(walton.toolbar.IToolbar):
 
 
 
-    def drawPossiblePointsBox(self, width, height, minimum, maximum, scaleMin, scaleMax, expectedPoints):
+    def drawPossiblePointsBox(self, width, height, minimum, maximum, scaleMin, scaleMax, expectedPoints, safePoints):
         ''' Draws a svg graphical box to display the specified wins, draws and losses ratio.
 
         :param int width: Specifies the width of the box.  Default to 200.
@@ -161,8 +162,8 @@ class Render(walton.toolbar.IToolbar):
 
         # Border.
         self.html.add('<rect class="wdlbox" width="{}" height="{}" style="fill: none; stroke-width: 2;" />'.format(width, height))
-        # Draw a tick mark at 40 points.
-        tickPos = int(round(width * (40 - scaleMin) / (scaleMax - scaleMin), 0))
+        # Draw a tick mark at safe point points.
+        tickPos = int(round(width * (safePoints - scaleMin) / (scaleMax - scaleMin), 0))
         self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
         self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
         # Draw a line at expected points.
@@ -196,6 +197,8 @@ class Render(walton.toolbar.IToolbar):
                         maxPoints = teamMaxPoints
                     if teamMinPoints < minPoints:
                         minPoints = teamMinPoints
+                if count == 17:
+                    safePoints = (int)(math.ceil(38 * row[11] / played))
             cursor.close()
         self.html.addLine('<table>')
         if isCombinedHomeAway:
@@ -259,9 +262,12 @@ class Render(walton.toolbar.IToolbar):
                 teamMaxPoints = teamMinPoints + (38 - played) * 3
                 if teamMaxPoints > maxPoints:
                     maxPoints = teamMaxPoints
-                self.html.add(f'<td class="secondary" style="text-align: right;">{teamMaxPoints}</td>')
-                self.html.add('<td>')
-                self.drawPossiblePointsBox(200, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, 38 * row[11] / played)
+                self.html.add(f'<td class="minor" style="text-align: right;">{teamMaxPoints}</td>')
+                if count >= 17:
+                    self.html.add(f'<td title="Expected safe points are {safePoints}.">')
+                else:
+                    self.html.add('<td>')
+                self.drawPossiblePointsBox(200, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, 38 * row[11] / played, safePoints)
                 self.html.add('</td>')
 
             self.html.addLine('</tr>')
@@ -304,7 +310,7 @@ class Render(walton.toolbar.IToolbar):
             nextSeason = f'home?season={season.getNextSeasonIndex()}'
         self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, previousSeason, nextSeason, False, True, False, toolbar)
 
-        self.html.add(f'<p><span class="h1">{season.name} {seasonIndex}</span>')
+        self.html.add(f'<p><span class="h1">{season.name}</span>')
         self.html.add(f' <span class="label">from</span> {self.database.formatDate(season.startDate)} <span class="label">to</span> {self.database.formatDate(season.finishDate)}.')
         links = season.getLinks()
         if season.comments is not None or len(links) > 0:
