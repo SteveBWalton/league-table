@@ -745,19 +745,43 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
 
-        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Summary</legend>')
-        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
-        sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
-        sql += f"WHERE HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex} "
-        sql += "GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
-        sql += "INNER JOIN "
-        sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
-        sql += f"WHERE AWAY_TEAM_ID = {teamIndex} OR HOME_TEAM_ID = {teamIndex} "
-        sql += "GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
-        sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
-        sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC LIMIT 30 OFFSET 1; "
-        self.displayTable(cndb, sql, False, False, False)
-        self.html.addLine('</fieldset>')
+        # summaryType = 2
+        self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
+        for summaryType in range(2):
+            if summaryType == 1:
+                self.html.addLine('<br />')
+                self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>Summary Points against {team.name}</legend>')
+            else:
+                self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>Summary Points for {team.name}</legend>')
+
+            if summaryType == 1:
+                # Points that teams have score against this team.
+                sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
+                sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
+                sql += f"WHERE HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex} "
+                sql += "GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+                sql += "INNER JOIN "
+                sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
+                sql += f"WHERE AWAY_TEAM_ID = {teamIndex} OR HOME_TEAM_ID = {teamIndex} "
+                sql += "GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+                sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
+                sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC LIMIT 30 OFFSET 1; "
+            else:
+                # Points that this team has scored against these teams.
+                sql = "SELECT HOME_TEAM_ID, AWAY_LOSES, AWAY_DRAWS, AWAY_WINS, AWAY_AGAINST, AWAY_FOR, HOME_LOSES, HOME_DRAWS, HOME_WINS, HOME_AGAINST, HOME_FOR, 3 * (HOME_LOSES + AWAY_LOSES) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, -HOME_FOR - AWAY_FOR + HOME_AGAINST + AWAY_AGAINST AS DIFF, HOME_AGAINST + AWAY_AGAINST AS FOR FROM "
+                sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
+                sql += f"WHERE HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex} "
+                sql += "GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+                sql += "INNER JOIN "
+                sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
+                sql += f"WHERE AWAY_TEAM_ID = {teamIndex} OR HOME_TEAM_ID = {teamIndex} "
+                sql += "GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+                sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
+                sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC LIMIT 30 OFFSET 1; "
+
+            self.displayTable(cndb, sql, False, False, False)
+            self.html.addLine('</fieldset>')
+        self.html.addLine('</div>')
 
         # Close the database.
         cndb.close()
