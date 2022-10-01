@@ -159,6 +159,10 @@ class Render(walton.toolbar.IToolbar):
         pixMaximum = int(round(width * (maximum - scaleMin) / (scaleMax - scaleMin), 0))
 
         self.html.add(f'<rect class="wdlbox_draw" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
+        tickPos = int(round(width * (expectedPoints - scaleMin) / (scaleMax - scaleMin), 0))
+        pixMinimum = ( pixMinimum + tickPos ) // 2
+        pixMaximum = ( pixMaximum + tickPos ) // 2
+        self.html.add(f'<rect class="wdlbox_win" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
 
         # Border.
         self.html.add('<rect class="wdlbox" width="{}" height="{}" style="fill: none; stroke-width: 2;" />'.format(width, height))
