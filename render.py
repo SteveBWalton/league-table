@@ -186,6 +186,7 @@ class Render(walton.toolbar.IToolbar):
             count = 0
             minPoints = 0
             maxPoints = 0
+            safePoints = 0
             for row in cursor:
                 count += 1
                 played = row[1] + row[2] + row[3] + row[6] + row[7] + row[8]
