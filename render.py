@@ -204,6 +204,8 @@ class Render(walton.toolbar.IToolbar):
                         minPoints = teamMinPoints
                 if count == 17:
                     safePoints = (int)(math.ceil(38 * row[11] / played))
+                elif count == 18:
+                    safePoints = (int)(math.ceil((safePoints + (int)(math.ceil(38 * row[11] / played))) / 2))
             cursor.close()
         self.html.addLine('<table>')
         if isCombinedHomeAway:
