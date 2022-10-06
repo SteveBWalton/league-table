@@ -73,9 +73,9 @@ if [ ! -e "walton/glade/webkit.py" ] ; then
 fi
 
 # Add links to the glade folder.
-#if [ ! -e "glade/soccer_ball.ico" ] ; then
-#    ln -s ../../../../Graphics/Icons/soccer_ball.ico glade/soccer_ball.ico
-#fi
+if [ ! -e "glade/soccer_ball.ico" ] ; then
+    ln -s ../../../../Graphics/Icons/soccer_ball.ico glade/soccer_ball.ico
+fi
 
 # Make a docs folder for the documentation.
 if [ ! -d "docs" ] ; then
@@ -98,5 +98,5 @@ chmod 700 $(ls -d */)
 
 # Add execute permission to thoses files that require it.
 chmod 700 *.sh
-chmod 700 table.py
+chmod 700 league-table.py
 
