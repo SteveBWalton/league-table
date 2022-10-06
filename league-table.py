@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-Module to run the table program.
+Module to run the league table program.
 '''
 
 # Import system libraries.
@@ -19,7 +19,7 @@ import walton.ansi
 if __name__ == '__main__':
     # Process the command line arguments.
     # This might end the program (--help).
-    argParse = argparse.ArgumentParser(prog='table', description='League tables in various sports.')
+    argParse = argparse.ArgumentParser(prog='league-table', description='League tables in various sports.')
     argParse.add_argument('-i', '--install', help='Install the modelling program and desktop link.', action='store_true')
     argParse.add_argument('-u', '--uninstall', help='Uninstall the modelling program.', action='store_true')
     args = argParse.parse_args()
@@ -34,11 +34,11 @@ if __name__ == '__main__':
         if walton.install.isRootUser():
             print('Please run the rest of the installation as a standard user.')
         else:
-            walton.install.makeCommandPrompt('table', False, __file__)
-            walton.install.makeDesktopFile('walton.table', False, 'Table', __file__, f'{os.path.dirname(__file__)}/glade/soccer_ball.ico', 'League tables in various sports.', 'GNOME;GTK;Waltons;')
+            walton.install.makeCommandPrompt('league-table', False, __file__)
+            walton.install.makeDesktopFile('walton.league-table', False, 'League Table', __file__, f'{os.path.dirname(__file__)}/glade/soccer_ball.ico', 'League tables in various sports.', 'GNOME;GTK;Waltons;')
 
             # Add an alias to remove warning messages.
-            walton.install.addBashAlias('table')
+            walton.install.addBashAlias('league-table')
 
         sys.exit(0)
 
@@ -48,12 +48,12 @@ if __name__ == '__main__':
         if walton.install.isRootUser():
             print('Please run the uninstall as a standard user.')
         else:
-            walton.install.removeCommandPrompt('table', False)
-            walton.install.removeDesktopFile('walton.table', False)
+            walton.install.removeCommandPrompt('league-table', False)
+            walton.install.removeDesktopFile('walton.league-table', False)
         sys.exit(0)
 
     # Welcome message.
-    print(f'{walton.ansi.LIGHT_YELLOW}Table{walton.ansi.RESET_ALL} by Steve Walton © 2022-2022.')
+    print(f'{walton.ansi.LIGHT_YELLOW}League Table{walton.ansi.RESET_ALL} by Steve Walton © 2022-2022.')
     print(f'Python Version {sys.version_info.major}·{sys.version_info.minor}·{sys.version_info.micro}.  Expecting Python 3.')
 
 
@@ -103,4 +103,4 @@ if __name__ == '__main__':
         print('Error - Graphics are not available.')
 
 
-    print(f'Goodbye from the {walton.ansi.LIGHT_YELLOW}Table{walton.ansi.RESET_ALL} database.')
+    print(f'Goodbye from the {walton.ansi.LIGHT_YELLOW}League Table{walton.ansi.RESET_ALL} database.')
