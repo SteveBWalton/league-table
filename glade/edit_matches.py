@@ -61,6 +61,8 @@ class EditMatches:
         self.isChanged = False
         # The link IDs to delete.
         self.linksDelete = []
+        # The match records to delete.
+        self.matchesDelete = []
 
         # The GTK builder for the dialog.
         self.builder = Gtk.Builder()
@@ -82,6 +84,7 @@ class EditMatches:
         # Add the events to the dialog.
         signals = {
             'on_cmdAddRow_clicked'                  : self._addRow,
+            'on_cmdDeleteRow_clicked'               : self._deleteRow,
 
             'on_cellrenderercomboDate_edited'       : self._matchDateEdited,
             'on_cellrendertoggleDateGuess_toggled'  : self._dateGuessToggled,
@@ -344,6 +347,27 @@ class EditMatches:
 
 
 
+    def _deleteRow(self, widget):
+        ''' Signal handler for the 'Delete Match' button. '''
+        # Find the selected row.
+        treeviewMatches = self.builder.get_object('treeviewMatches')
+        matchPath, focusColumn = treeviewMatches.get_cursor()
+        if matchPath == None:
+            # Nothing is selected
+            return
+
+        # Find the selected record.
+        liststoreMatches = self.builder.get_object('liststoreMatches')
+        iterMatch = liststoreMatches.get_iter(matchPath)
+        matchIndex = liststoreMatches.get_value(iterMatch, 0)
+        if matchIndex > 0:
+            self.matchesDelete.append(matchIndex)
+
+        # Remove the identified row.
+        liststoreMatches.remove(iterMatch)
+
+
+
     def writeChanges(self):
         ''' Write the contents of the dialog to the database. '''
         # Get handlers to the liststores.
@@ -352,6 +376,12 @@ class EditMatches:
 
         # Open the database.
         cndb = sqlite3.connect(self.database.filename)
+
+        # Remove any matches marked for delete.
+        for matchIndex in self.matchesDelete:
+            sql = f"DELETE FROM MATCHES WHERE ID = {matchIndex};"
+            cursor = cndb.execute(sql)
+            cndb.commit()
 
         # Loop through the liststore of matches.
         iterMatches = liststoreMatches.get_iter_first()
