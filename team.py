@@ -53,8 +53,6 @@ class Team:
         self.lastYear = -1
         # Optional additional text description of the team.
         self.comments = None
-        # Optional url for a link for more information about this team.
-        self.internetUrl = None
 
 
 
@@ -159,7 +157,7 @@ class Team:
         cndb = sqlite3.connect(self.database.filename)
 
         # sql = 'SELECT Name, CountryID, DoB, DoD, FirstYear, LastYear, Comments, InternetURL FROM Teams WHERE ID = ?;'
-        sql = 'SELECT LABEL FROM TEAMS WHERE ID = ?;'
+        sql = 'SELECT LABEL, COMMENTS FROM TEAMS WHERE ID = ?;'
         params = (teamIndex, )
         cursor = cndb.execute(sql, params)
         row = cursor.fetchone()
@@ -172,6 +170,7 @@ class Team:
 
         self.index = teamIndex
         self.name = row[0]
+        self.comments = row[1]
         #self.countryIndex = row[1]
         #if row[2] == None:
         #    self.dob = None
@@ -184,8 +183,6 @@ class Team:
         #    self.dod = datetime.date(*time.strptime(row[3], "%Y-%m-%d")[:3])
         #self.firstYear = row[4]
         #self.lastYear = row[5]
-        #self.comments = row[6]
-        #self.internetUrl = row[7]
 
         # Close the database.
         cndb.close()
@@ -200,7 +197,7 @@ class Team:
             params = (self.database.param(self.name, ''), self.database.currentSport.index, self.database.param(self.countryIndex, -1), self.firstYear, self.lastYear, self.dob, self.dod, self.database.param(self.comments, ''), self.database.param(self.internetUrl, ''))
         else:
             # Update an existing record.
-            sql = 'UPDATE TEAMS SET LABEL = ?, Comments = ? WHERE ID = ?;'
+            sql = 'UPDATE TEAMS SET LABEL = ?, COMMENTS = ? WHERE ID = ?;'
             params = (self.database.param(self.name, ''), self.database.param(self.comments, ''), self.index)
 
         if self.database.debug:
