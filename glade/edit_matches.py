@@ -565,3 +565,5 @@ class EditMatches:
         # Close the dialog.
         self.dialog.hide()
         self.dialog.destroy()
+
+        return response == Gtk.ResponseType.OK

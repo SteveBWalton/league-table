@@ -288,6 +288,7 @@ class Render(walton.toolbar.IToolbar):
 
         :param string parametersString: Specify the request parameters as a string. The keys 'firstyear' and 'lastyear' are optional.
         '''
+        # print('showHome()')
         # Decode the parameters.
         level = int(parameters['level']) if 'level' in parameters else 0
         seasonIndex = int(parameters['season']) if 'season' in parameters else 1

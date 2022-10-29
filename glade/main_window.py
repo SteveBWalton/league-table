@@ -879,7 +879,13 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
 
         dialog = glade.edit_matches.EditMatches(self.window)
         if dialog.editMatches(self.database, sql, seasonIndex):
-            self.render.showHome({'season': seasonIndex})
+            # print('Edit has finished')
+            if theDate is None:
+                self.render.showHome({'season': seasonIndex})
+            else:
+                self.render.showHome({'season': seasonIndex, 'date': theDate})
+            self.displayCurrentPage()
+
         return True
 
 
