@@ -937,6 +937,8 @@ class Render(walton.toolbar.IToolbar):
     def showTableTeams(self, parameters):
         ''' Show a table of teams for all time or between two specified dates. '''
         level = int(parameters['level']) if 'level' in parameters else 0
+        startDate = parameters['start_date'] if 'start_date' in parameters else None
+        finishDate = parameters['finish_date'] if 'finish_date' in parameters else None
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
@@ -949,27 +951,40 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.add('<p><span class="h1">Table of Teams</span></p>')
 
+        self.html.addLine('<fieldset><legend>Control</legend>')
+        self.html.addLine('<form action="app:table_teams">')
+        self.html.addLine('<table>')
+        self.html.add(f'<tr><td>Start Date</td><td><input type="date" name="start_date" value="{startDate}" /></td>')
+        self.html.add(f'<td>Finish Date</td><td><input type="date" name="finish_date" value="{finishDate}" /></td></tr>')
+        self.html.add(f'<tr><td>Start Date</td><td>{startDate}</td>')
+        self.html.add(f'<td>Finish Date</td><td>{finishDate}</td></tr>')
+        self.html.addLine('</table>')
+        self.html.addLine('<input type="submit" name="update" value="OK" />')
+        self.html.addLine('</form>')
+        self.html.addLine('</fieldset>')
+
         self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
-        self.html.add('All Time Table')
+        if startDate is None or finishDate is None:
+            self.html.add('All Time Table')
+        else:
+            self.html.add(f'Between {startDate} and {finishDate}')
         self.html.addLine('</legend>')
 
         sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
         sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
-        #if theDate is None:
-        #    # All Results
-        #    sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
-        #else:
-        #    # Up to the date.
-        #    sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+        if startDate is None or finishDate is None:
+            pass
+        else:
+            # Between dates.
+            sql += f"WHERE THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}' "
         sql += "GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
         sql += "INNER JOIN "
         sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
-        #if theDate is None:
-        #    # All Results.
-        #    sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
-        #else:
-        #    # Update to the date.
-        #    sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+        if startDate is None or finishDate is None:
+            pass
+        else:
+            # Between dates.
+            sql += f"WHERE THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}' "
         sql += "GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
         sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
         sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
