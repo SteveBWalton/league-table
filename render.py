@@ -116,6 +116,45 @@ class Render(walton.toolbar.IToolbar):
 
 
 
+    def displayLastResults(self, cndb, teamIndex, theDate, lastResults):
+        ''' Show the last results for the specified team. '''
+        height = 18
+        width = (height + 4) * lastResults
+        self.html.add('<td>')
+        self.html.add(f'<svg class="wdlbox" width="{width}" height="{height}" style="vertical-align: middle;">')
+
+        sql = f"SELECT HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND THE_DATE <= '{theDate}' ORDER BY THE_DATE DESC LIMIT 5;";
+        # print(sql)
+        cursor = cndb.execute(sql)
+        count = 0
+        pts = 0
+        for row in cursor:
+            pos = (lastResults - count - 1) * (height + 4)
+            count += 1
+            if row[2] == row[3]:
+                # Draw.
+                self.html.add(f'<rect class="wdlbox_draw" x="{pos}" y="0" width="{height}" height="{height}" style="stroke-width: 1; stroke: rgb(0, 0, 0);" />')
+                pts += 1
+            elif row[0] == teamIndex:
+                # Home Team.
+                if row[2] > row[3]:
+                    self.html.add(f'<rect class="wdlbox_win" x="{pos}" y="0" width="{height}" height="{height}" style="stroke-width: 1; stroke: rgb(0, 0, 0);" />')
+                    pts += 3
+                else:
+                    self.html.add(f'<rect class="wdlbox_lose" x="{pos}" y="0" width="{height}" height="{height}" style="stroke-width: 1; stroke: rgb(0, 0, 0);" />')
+            else:
+                # Away Team
+                if row[2] < row[3]:
+                    self.html.add(f'<rect class="wdlbox_win" x="{pos}" y="0" width="{height}" height="{height}" style="stroke-width: 1; stroke: rgb(0, 0, 0);" />')
+                    pts += 3
+                else:
+                    self.html.add(f'<rect class="wdlbox_lose" x="{pos}" y="0" width="{height}" height="{height}" style="stroke-width: 1; stroke: rgb(0, 0, 0);" />')
+        cursor.close()
+        self.html.addLine('</svg></td>')
+        self.html.add(f'<td class="secondary" style="text-align: right;">{pts}</td>')
+
+
+
     def drawWinDrawLossBox(self, width, height, numWins, numDraws, numLosses):
         ''' Draws a svg graphical box to display the specified wins, draws and losses ratio.
 
@@ -177,7 +216,7 @@ class Render(walton.toolbar.IToolbar):
 
 
 
-    def displayTable(self, cndb, sql, isCombinedHomeAway, isAddColour, isShowRange):
+    def displayTable(self, cndb, sql, isCombinedHomeAway, isAddColour, isShowRange, theDate, lastResults):
         ''' Display a table on the html object. '''
 
         if isShowRange:
@@ -217,6 +256,8 @@ class Render(walton.toolbar.IToolbar):
             if isShowPossiblePoints:
                 self.html.add('<td></td>')
                 self.html.add('<td colspan="2">Possible Points</td>')
+        if lastResults > 0:
+            self.html.add(f'<td colspan="2">Last {lastResults} Matches</td>')
         self.html.addLine('</tr>')
         cursor = cndb.execute(sql)
         count = 0
@@ -276,6 +317,9 @@ class Render(walton.toolbar.IToolbar):
                     self.html.add('<td>')
                 self.drawPossiblePointsBox(200, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, 38 * row[11] / played, safePoints)
                 self.html.add('</td>')
+
+            if lastResults > 0:
+                self.displayLastResults(cndb, team.index, theDate, lastResults)
 
             self.html.addLine('</tr>')
         self.html.addLine('</table>')
@@ -372,7 +416,7 @@ class Render(walton.toolbar.IToolbar):
         # print(sql)
         # sql .= "USING (TEAM_ID);"
 
-        self.displayTable(cndb, sql, level == 1, True, True)
+        self.displayTable(cndb, sql, level == 1, True, True, theDate, 5)
         self.html.addLine('</fieldset>')
 
         self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
@@ -793,7 +837,7 @@ class Render(walton.toolbar.IToolbar):
                 sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
                 sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC LIMIT 30 OFFSET 1; "
 
-            self.displayTable(cndb, sql, False, False, False)
+            self.displayTable(cndb, sql, False, False, False, None, 0)
             self.html.addLine('</fieldset>')
 
         self.html.addLine('<br />')
@@ -883,7 +927,7 @@ class Render(walton.toolbar.IToolbar):
         sql += "GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
         sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
         sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
-        self.displayTable(cndb, sql, False, False, False)
+        self.displayTable(cndb, sql, False, False, False, None, 0)
         self.html.addLine('</fieldset>')
 
         self.html.addLine('<fieldset><legend>Matches</legend>')
@@ -991,7 +1035,7 @@ class Render(walton.toolbar.IToolbar):
         # print(sql)
         # sql .= "USING (TEAM_ID);"
 
-        self.displayTable(cndb, sql, level == 1, False, False)
+        self.displayTable(cndb, sql, level == 1, False, False, None, 0)
         self.html.addLine('</fieldset>')
 
         # Close the database.

@@ -403,9 +403,9 @@ class EditMatches:
                 awayTeamFor = liststoreMatches.get_value(iterMatches, 9)
 
                 if matchIndex == 0:
-                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR) VALUES ({self.seasonIndex}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor});"
+                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR) VALUES ({self.seasonIndex}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor});"
                 else:
-                    sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
+                    sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor}, REAL_HOME_TEAM_FOR = {homeTeamFor}, REAL_AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
 
                 # Execute the command.
                 # print(sql)
