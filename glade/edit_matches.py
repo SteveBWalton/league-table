@@ -374,6 +374,12 @@ class EditMatches:
         liststoreMatches = self.builder.get_object('liststoreMatches')
         liststoreTeams = self.builder.get_object('liststoreTeams')
 
+        # Get the current mode.
+        comboboxMode = self.builder.get_object('comboboxMode')
+        modeIter = comboboxMode.get_active_iter()
+        liststoreModes = self.builder.get_object('liststoreModes')
+        activeMode = liststoreModes.get_value(modeIter, 0)
+
         # Open the database.
         cndb = sqlite3.connect(self.database.filename)
 
@@ -405,7 +411,12 @@ class EditMatches:
                 if matchIndex == 0:
                     sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR) VALUES ({self.seasonIndex}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor});"
                 else:
-                    sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor}, REAL_HOME_TEAM_FOR = {homeTeamFor}, REAL_AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
+                    if activeMode == 1:
+                        # What if mode.
+                        sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
+                    else:
+                        # Real mode.
+                        sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor}, REAL_HOME_TEAM_FOR = {homeTeamFor}, REAL_AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
 
                 # Execute the command.
                 # print(sql)
@@ -476,6 +487,9 @@ class EditMatches:
         # print 'Populate Matches Season {} TournamentID {}'.format(theYear,tournamentIndex)
         entrySeason = self.builder.get_object('entrySeason')
         entrySeason.set_text(self.seasonIndex)
+
+        comboboxMode = self.builder.get_object('comboboxMode')
+        comboboxMode.set_active(0)
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)

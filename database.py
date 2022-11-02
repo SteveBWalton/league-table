@@ -118,3 +118,15 @@ class Database(walton.database.IDatabase):
 
 
 
+    def restore(self):
+        ''' Remove the what if results. '''
+        # Connect to the database.
+        cndb = sqlite3.connect(self.filename)
+
+        sql = "UPDATE MATCHES SET HOME_TEAM_FOR = REAL_HOME_TEAM_FOR, AWAY_TEAM_FOR = REAL_AWAY_TEAM_FOR WHERE REAL_HOME_TEAM_FOR IS NOT NULL AND REAL_AWAY_TEAM_FOR IS NOT NULL AND (HOME_TEAM_FOR != REAL_HOME_TEAM_FOR OR AWAY_TEAM_FOR != REAL_AWAY_TEAM_FOR);"
+        cndb.execute(sql)
+        cndb.commit()
+
+        # Close the database.
+        cndb.close()
+

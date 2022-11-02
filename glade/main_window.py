@@ -144,6 +144,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             'on_menuitemFileQuit_activate'          : self._fileQuit,
 
             'on_menuitemEditEdit_activate'          : self._editEdit,
+            'on_menuitemEditRestore_activate'       : self._editRestore,
             'on_menuitemEditAddSeason_activate'     : self._editAddSeason,
             'on_menuitemEditPreferences_activate'   : self._editPreferences,
             'on_menuCopy_activate'                  : self._editCopy,
@@ -218,10 +219,10 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         # The currently selected level.  Use 'None' for the default level.  The first user option is level 0.
         self.selectedLevel = None
 
-        # Open the database for the 'Sports Results' database.
+        # Open the database for the 'Table' database.
         self.database = self.application.database
 
-        # The render object for the 'Sports Results' database.
+        # The render object for the 'Table' database.
         # self.render = modRender.Render(self.database)
         # self.render.html.stylesheets.append('file://' + os.path.dirname(os.path.realpath(__file__)) + '/' +'sportsresults.css')
         # self.render.html.stylesheets.append('file://' + os.path.dirname(os.path.realpath(__file__)) + '/' +'textsize_{}.css'.format(self.configuration.textSize))
@@ -266,6 +267,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         self.followLocalLink('index', True)
 
 
+
     def _fileBack(self, widget):
         ''' Signal handler for the 'File' → 'Back' menu item. '''
         if self.database.debug:
@@ -275,6 +277,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         if len(self.history) > 0:
             link = self.history.pop()
             self.followLocalLink(link, True)
+
 
 
     def _filePrint(self, widget):
@@ -317,6 +320,16 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             # Show the season identified.
             # self.render.showSeason({'season': seasonIndex})
         return True
+
+
+
+    def _editRestore(self, widget):
+        ''' Signal handler for the 'Edit' -> 'Restore' menu item. '''
+        self.database.restore()
+
+        # self.render.showHome({})
+        # self.displayCurrentPage()
+        self.followLocalLink('refresh', False)
 
 
 
@@ -440,6 +453,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             self.selectedCountryIndex = country.index
         # Update the page
         self.openCurrentPage()
+
 
 
     def _YearsClicked(self, widget):
@@ -643,9 +657,11 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         # Add this link to the history.
         if link[0:4] != 'edit':
             if addToHistory:
-                if len(self.history) > 5:
+                if len(self.history) > 15:
                     self.history.pop(0)
                 self.history.append(link)
+                if self.application.debug:
+                    print(f'addHistory({link})')
 
         # Decode the request into action and parameters.
         if isDecode:
@@ -881,9 +897,11 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         if dialog.editMatches(self.database, sql, seasonIndex):
             # print('Edit has finished')
             if theDate is None:
-                self.render.showHome({'season': seasonIndex})
+                # self.render.showHome({'season': seasonIndex})
+                self.followLocalLink(f'home?season={seasonIndex}', True)
             else:
-                self.render.showHome({'season': seasonIndex, 'date': theDate})
+                # self.render.showHome({'season': seasonIndex, 'date': theDate})
+                self.followLocalLink(f'home?season={seasonIndex}&date={theDate}', True)
             self.displayCurrentPage()
 
         return True

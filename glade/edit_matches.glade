@@ -55,6 +55,24 @@
       <column type="gint"/>
     </columns>
   </object>
+  <object class="GtkListStore" id="liststoreModes">
+    <columns>
+      <!-- column-name ModeID -->
+      <column type="gint"/>
+      <!-- column-name ModeName -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0">0</col>
+        <col id="1" translatable="yes">Real</col>
+      </row>
+      <row>
+        <col id="0">1</col>
+        <col id="1" translatable="yes">What If</col>
+      </row>
+    </data>
+  </object>
   <object class="GtkListStore" id="liststoreTeams">
     <columns>
       <!-- column-name TeamID -->
@@ -165,6 +183,10 @@
                       <object class="GtkEntry" id="entrySeason">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="margin-start">3</property>
+                        <property name="margin-end">3</property>
+                        <property name="margin-top">3</property>
+                        <property name="margin-bottom">3</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -173,10 +195,42 @@
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkLabel" id="labelMode">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">3</property>
+                        <property name="margin-end">3</property>
+                        <property name="margin-top">3</property>
+                        <property name="margin-bottom">3</property>
+                        <property name="label" translatable="yes">Mode</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">4</property>
+                      </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkComboBox" id="comboboxMode">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-start">3</property>
+                        <property name="margin-end">3</property>
+                        <property name="margin-top">3</property>
+                        <property name="margin-bottom">3</property>
+                        <property name="model">liststoreModes</property>
+                        <child>
+                          <object class="GtkCellRendererText"/>
+                          <attributes>
+                            <attribute name="text">1</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">5</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>
