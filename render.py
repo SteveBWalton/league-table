@@ -428,11 +428,11 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<table>')
         if theDate is None:
             # All Results.
-            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
+            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
             params = (seasonIndex, )
         else:
             # Results up to date.
-            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE <= ? ORDER BY THE_DATE DESC LIMIT 20;"
+            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE <= ? ORDER BY THE_DATE DESC LIMIT 20;"
             params = (seasonIndex, theDate)
 
         cursor = cndb.execute(sql, params)
@@ -457,8 +457,11 @@ class Render(walton.toolbar.IToolbar):
                 self.html.add('<tr>')
                 self.html.add('<td></td>')
             self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
-            self.html.add(f'<td>{row[4]}</td>')
-            self.html.add(f'<td>{row[5]}</td>')
+            whatIf = ''
+            if row[6] != row[4] or row[7] != row[5]:
+                whatIf = ' class="win"'
+            self.html.add(f'<td{whatIf}>{row[4]}</td>')
+            self.html.add(f'<td{whatIf}>{row[5]}</td>')
             self.html.add(f'<td>{awayTeam.toHtml()}</td>')
             self.html.addLine('</tr>')
 
