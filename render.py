@@ -143,7 +143,7 @@ class Render(walton.toolbar.IToolbar):
                 else:
                     self.html.add(f'<rect class="wdlbox_lose" x="{pos}" y="0" width="{height}" height="{height}" style="stroke-width: 1; stroke: rgb(0, 0, 0);" />')
             else:
-                # Away Team
+                # Away Team.
                 if row[2] < row[3]:
                     self.html.add(f'<rect class="wdlbox_win" x="{pos}" y="0" width="{height}" height="{height}" style="stroke-width: 1; stroke: rgb(0, 0, 0);" />')
                     pts += 3
@@ -416,7 +416,7 @@ class Render(walton.toolbar.IToolbar):
         # print(sql)
         # sql .= "USING (TEAM_ID);"
 
-        self.displayTable(cndb, sql, level == 1, True, True, theDate, 5)
+        self.displayTable(cndb, sql, level == 1, True, True, season.finishDate if theDate is None else theDate, 5)
         self.html.addLine('</fieldset>')
 
         self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
