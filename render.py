@@ -82,7 +82,8 @@ class Render(walton.toolbar.IToolbar):
             'preferences'       : self.showPreferences,
             'show_team'         : self.showTeam,
             'head'              : self.showHeadToHead,
-            'table_teams'       : self.showTableTeams
+            'table_teams'       : self.showTableTeams,
+            'table_last'        : self.showTableLast
         }
 
 
@@ -530,6 +531,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<legend>General</legend>')
         self.html.addLine('<ul>')
         self.html.addLine('<li><a href="app:table_teams">All Time Table</a></li>')
+        self.html.addLine('<li><a href="app:table_last">Table of last 5 Results</a></li>')
         self.html.addLine('<li><a href="app:tournament_winners">Tournament Results</a></li>')
         self.html.addLine('<li><a href="app:show_season">Season Results</a></li>')
         self.html.addLine('<li><a href="app:table_matches">Table of Match Wins</a></li>')
@@ -1050,3 +1052,237 @@ class Render(walton.toolbar.IToolbar):
         # Set the page flags.
         self.nextPagePage = None
         self.previousPage = None
+
+
+
+    def showTableLast(self, parameters):
+        ''' Show a table of team last (5) results. '''
+        lastResults = int(parameters['last']) if 'last' in parameters else 5
+        seasonIndex = int(parameters['season']) if 'season' in parameters else 1
+        theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
+        level = 0
+
+        # Check the the date is in season range.
+        season = self.database.getSeason(seasonIndex)
+        if theDate > season.finishDate:
+            theDate = season.finishDate
+        self.html.clear()
+        toolbar = self.buildToolbarOptions(level, 'level', ((0, 'Default'), (1, 'Combined')), 'app:table_last', (('date', theDate), ('season', seasonIndex) ))
+        if theDate is None:
+            self.editTarget = f'edit_date?season={seasonIndex}'
+        else:
+            self.editTarget = f'edit_date?season={seasonIndex}&date={theDate}'
+        if season.getPreviousSeasonIndex() is None:
+            previousSeason = None
+        else:
+            previousSeason = f'table_last?season={season.getPreviousSeasonIndex()}'
+        if season.getNextSeasonIndex() is None:
+            nextSeason = None
+        else:
+            nextSeason = f'table_last?season={season.getNextSeasonIndex()}'
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, previousSeason, nextSeason, False, True, False, toolbar)
+
+        self.html.add(f'<p><span class="h1">{season.name} Last {lastResults} Results</span>')
+        self.html.add(f' <span class="label">from</span> {self.database.formatDate(season.startDate)} <span class="label">to</span> {self.database.formatDate(season.finishDate)}.')
+        links = season.getLinks()
+        if season.comments is not None or len(links) > 0:
+            #self.html.add('<p>')
+            if season.comments is not None:
+                self.html.add(' {}'.format(team.comments))
+            if len(links) > 0:
+                self.html.add(' <span class="label">More information at</span>')
+                count = 0
+                for linkLabel in links:
+                    count += 1
+                    if count == 1:
+                        self.html.add(' ')
+                    elif count == len(links):
+                        self.html.add(' <span class="label">and</span> ')
+                    else:
+                        self.html.add('<span class="label">,</span> ')
+                    self.html.add('<a href="{}">{}</a>'.format(links[linkLabel], linkLabel))
+                self.html.add('. ')
+            #self.html.add('</p>')
+        self.html.addLine('</p>')
+
+        # Connect to the database.
+        cndb = sqlite3.connect(self.database.filename)
+
+        # Build a temporary table with the last results for each team.
+        cndb.execute("DROP TABLE IF EXISTS temp.LAST_RESULTS;")
+        cndb.execute("CREATE TEMP TABLE LAST_RESULTS (TEAM_ID INTEGER, HOME_WIN INTEGER, HOME_DRAW INTEGER, HOME_LOSE INTEGER, HOME_FOR INTEGER, HOME_AGN INTEGER, AWAY_WIN INTEGER, AWAY_DRAW INTEGER, AWAY_LOSE INTEGER, AWAY_FOR INTEGER, AWAY_AGN INTEGER);")
+
+        # Find the teams in the season.
+        sql = f"SELECT HOME_TEAM_ID FROM MATCHES WHERE SEASON_ID = {seasonIndex} GROUP BY HOME_TEAM_ID;"
+        cursor = cndb.execute(sql)
+        teams = []
+        for row in cursor:
+            teams.append(row[0])
+        cursor.close()
+
+        for teamIndex in teams:
+            homeWins = 0
+            homeDraw = 0
+            homeLost = 0
+            homeFor = 0
+            homeAgn = 0
+            awayWins = 0
+            awayDraw = 0
+            awayLost = 0
+            awayFor = 0
+            awayAgn = 0
+
+            sql = f"SELECT HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND THE_DATE <= '{theDate}' ORDER BY THE_DATE DESC LIMIT 5;";
+            # print(sql)
+            cursor = cndb.execute(sql)
+            count = 0
+            pts = 0
+            for row in cursor:
+                if row[0] == teamIndex:
+                    # Home Match.
+                    homeFor += row[2]
+                    homeAgn += row[3]
+                    if row[2] == row[3]:
+                        homeDraw += 1
+                    elif row[2] > row[3]:
+                        homeWins += 1
+                    else:
+                        homeLost += 1
+                else:
+                    # Away Match.
+                    awayFor += row[3]
+                    awayAgn += row[2]
+                    if row[2] == row[3]:
+                        awayDraw += 1
+                    elif row[2] < row[3]:
+                        awayWins += 1
+                    else:
+                        awayLost += 1
+            cursor.close()
+
+            sql = f"INSERT INTO temp.LAST_RESULTS (TEAM_ID, HOME_WIN, HOME_DRAW, HOME_LOSE, HOME_FOR, HOME_AGN, AWAY_WIN, AWAY_DRAW, AWAY_LOSE, AWAY_FOR, AWAY_AGN) VALUES({teamIndex}, {homeWins}, {homeDraw}, {homeLost}, {homeFor}, {homeAgn}, {awayWins}, {awayDraw}, {awayLost}, {awayFor}, {awayAgn});"
+            # print(sql)
+            cndb.execute(sql)
+            cndb.commit()
+
+        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
+        if theDate is None:
+            self.html.add('Final Table')
+        else:
+            self.html.add(f'Table to {self.database.formatDate(theDate)}')
+        self.html.addLine('</legend>')
+
+        sql = "SELECT TEAM_ID, HOME_WIN, HOME_DRAW, HOME_LOSE, HOME_FOR, HOME_AGN, AWAY_WIN, AWAY_DRAW, AWAY_LOSE, AWAY_FOR, AWAY_AGN, 3 * (HOME_WIN + AWAY_WIN) + (HOME_DRAW + AWAY_DRAW) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGN - AWAY_AGN AS DIFF FROM temp.LAST_RESULTS ORDER BY PTS DESC, DIFF DESC;"
+
+        #sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
+        #sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
+        #if theDate is None:
+        #    # All Results
+        #    sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+        #else:
+        #    # Up to the date.
+        #    sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+        #sql += "INNER JOIN "
+        #sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
+        #if theDate is None:
+        #    # All Results.
+        #    sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+        #else:
+        #    # Update to the date.
+        #    sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+        #sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
+        #sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
+        # print(sql)
+        # sql .= "USING (TEAM_ID);"
+
+        self.displayTable(cndb, sql, level == 1, False, False, season.finishDate if theDate is None else theDate, 5)
+        self.html.addLine('</fieldset>')
+
+        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
+        if theDate is None:
+            self.html.add('Final Matches')
+        else:
+            self.html.add(f'Matches to {self.database.formatDate(theDate)}')
+        self.html.addLine('</legend>')
+        self.html.addLine('<table>')
+        if theDate is None:
+            # All Results.
+            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? ORDER BY THE_DATE DESC LIMIT 20;"
+            params = (seasonIndex, )
+        else:
+            # Results up to date.
+            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE <= ? ORDER BY THE_DATE DESC LIMIT 20;"
+            params = (seasonIndex, theDate)
+
+        cursor = cndb.execute(sql, params)
+        lastDate = None
+        for row in cursor:
+            theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
+            formatMatchDate = self.database.formatDate(theMatchDate)
+            isDateGuess = row[1] == 1
+            if isDateGuess:
+                formatMatchDate = f'({row[0]})'
+            homeTeam = self.database.getTeam(row[2])
+            awayTeam = self.database.getTeam(row[3])
+
+            if lastDate != row[0]:
+                if lastDate is None:
+                    self.html.add('<tr>')
+                else:
+                    self.html.add('<tr style="border-top: 1px solid black;">')
+                self.html.add(f'<td class="date" style="text-align: center;"><a href="app:table_last?season={seasonIndex}&date={row[0]}">{formatMatchDate}</a></td>')
+                lastDate = row[0]
+            else:
+                self.html.add('<tr>')
+                self.html.add('<td></td>')
+            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+            whatIf = ''
+            if row[6] != row[4] or row[7] != row[5]:
+                whatIf = ' class="win"'
+            self.html.add(f'<td{whatIf}>{row[4]}</td>')
+            self.html.add(f'<td{whatIf}>{row[5]}</td>')
+            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+            self.html.addLine('</tr>')
+
+        self.html.addLine('</table>')
+        self.html.addLine('</fieldset>')
+
+        # Future matches.
+        if theDate is not None:
+            self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
+            self.html.add(f'Matches after {self.database.formatDate(theDate)}')
+            self.html.addLine('</legend>')
+            self.html.addLine('<table>')
+            # Results after to date.
+            sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR FROM MATCHES WHERE SEASON_ID = ? AND THE_DATE > ? ORDER BY THE_DATE LIMIT 20;"
+            params = (seasonIndex, theDate)
+
+            cursor = cndb.execute(sql, params)
+            for row in cursor:
+                self.html.add('<tr>')
+                theMatchDate = row[0]
+                isDateGuess = row[1] == 1
+                if isDateGuess:
+                    theMatchDate = f'({row[0]})'
+                homeTeam = self.database.getTeam(row[2])
+                awayTeam = self.database.getTeam(row[3])
+
+                self.html.add(f'<td class="date" style="text-align: center;"><a href="app:table_last?season={seasonIndex}&date={row[0]}">{theMatchDate}</a></td>')
+                self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+                whatIf = ''
+                if row[6] != row[4] or row[7] != row[5]:
+                    whatIf = ' class="win"'
+                self.html.add(f'<td{whatIf}>{row[4]}</td>')
+                self.html.add(f'<td{whatIf}>{row[5]}</td>')
+                self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+                self.html.addLine('</tr>')
+
+            self.html.addLine('</table>')
+            self.html.addLine('</fieldset>')
+
+        # Close the database.
+        cndb.close()
+
+        # Set the page flags.
+        self.levels = None
+        self.clipboardText = None
