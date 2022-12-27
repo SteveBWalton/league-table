@@ -305,7 +305,7 @@ class Render(walton.toolbar.IToolbar):
                 self.html.add(f'<td class="secondary" style="text-align: right;">{row[9]}</td>')
                 self.html.add(f'<td class="secondary" style="text-align: right;">{row[10]}</td>')
 
-            self.html.add(f'<td style="text-align: right;">{row[11]}</td>')
+            self.html.add(f'<td class="pts" style="text-align: right;">{row[11]}</td>')
             self.html.add(f'<td class="secondary" style="text-align: right;">{row[12]:+}</td>')
 
             self.html.add('<td>')

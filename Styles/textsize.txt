@@ -13,3 +13,4 @@ legend { font-size: 7pt; }
 .seed { font-size: 7pt; }
 .label { font-size: [FONT-SIZE,+1]; }
 .location { font-size: 7pt; }
+.pts { font-size: [FONT-SIZE,+7]; }

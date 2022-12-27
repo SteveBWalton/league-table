@@ -51,3 +51,4 @@ select.toolbar { position: relative; top: -7px; font-size: 7pt; }
 .label { white-space: nowrap; }
 .location { }
 .minor { color: grey; font-size: 7pt; vertical-align: middle; }
+.pts { font-weight: bold; }
