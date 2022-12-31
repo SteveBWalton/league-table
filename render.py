@@ -253,10 +253,10 @@ class Render(walton.toolbar.IToolbar):
         else:
             self.html.add('<tr><td colspan="2">Team</td><td style="text-align: right;">P</td><td style="text-align: right;">W</td><td style="text-align: right;">D</td><td style="text-align: right;">L</td><td style="text-align: right;">F</td><td style="text-align: right;">A</td><td style="text-align: right;">W</td><td style="text-align: right;">D</td><td style="text-align: right;">L</td><td style="text-align: right;">F</td><td style="text-align: right;">A</td>')
         self.html.add('<td style="text-align: right;">Pts</td><td style="text-align: right;">Dif</td>')
+        self.html.add('<td style="text-align: center;">Ratio</td>')
         if isShowRange:
             if isShowPossiblePoints:
-                self.html.add('<td></td>')
-                self.html.add('<td colspan="2">Possible Points</td>')
+                self.html.add('<td>Possible Points</td>')
         if lastResults > 0:
             self.html.add(f'<td colspan="2">Last {lastResults} Matches</td>')
         self.html.addLine('</tr>')
@@ -317,7 +317,7 @@ class Render(walton.toolbar.IToolbar):
                 teamMaxPoints = teamMinPoints + (38 - played) * 3
                 if teamMaxPoints > maxPoints:
                     maxPoints = teamMaxPoints
-                self.html.add(f'<td class="minor" style="text-align: right;">{teamMaxPoints}</td>')
+                # self.html.add(f'<td class="minor" style="text-align: right;">{teamMaxPoints}</td>')
                 if count >= 17:
                     self.html.add(f'<td title="Expected safe points are {safePoints}.">')
                 else:
