@@ -486,7 +486,10 @@ class EditMatches:
 
         # print 'Populate Matches Season {} TournamentID {}'.format(theYear,tournamentIndex)
         entrySeason = self.builder.get_object('entrySeason')
-        entrySeason.set_text(self.seasonIndex)
+        try:
+            entrySeason.set_text(self.seasonIndex)
+        except:
+            pass
 
         comboboxMode = self.builder.get_object('comboboxMode')
         comboboxMode.set_active(0)

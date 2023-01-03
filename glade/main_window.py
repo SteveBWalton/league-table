@@ -869,13 +869,14 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         Displays the EditMatches dialog with initial matches on the specified date.
         '''
         teamIndex = parameters['team'] if 'team' in parameters else None
+        seasonIndex = "1"
 
-        sql = f"SELECT ID, THE_DATE, 0 AS THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex} ORDER BY THE_DATE DESC;"
+        sql = f"SELECT ID, THE_DATE, 0 AS THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND SEASON_ID = {seasonIndex} ORDER BY THE_DATE DESC;"
 
         # Edit these matches.
         dialog = glade.edit_matches.EditMatches(self.window)
-        if dialog.editMatches(self.database, sql):
-            self.render.showHome({'season': seasonIndex})
+        if dialog.editMatches(self.database, sql, seasonIndex):
+            self.followLocalLink(f'team?team={teamIndex}', True)
         return True
 
 
