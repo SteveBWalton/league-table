@@ -124,7 +124,7 @@ class EditMatches:
                 monthIndex = int(theMonth)-1
 
             # Setup the current year as the initial value.
-            theYear = 2022
+            theYear = datetime.date.today().year
             calendar.select_month(monthIndex, theYear)
 
             calendar.show()
