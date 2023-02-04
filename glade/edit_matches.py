@@ -330,7 +330,7 @@ class EditMatches:
         newRow = liststoreMatches.append()
 
         # Using the '<None>' because in this version of GTK+3 the combobox will not scroll forward only backwards so start at the end!
-        theYear = 2022
+        theYear = datetime.date.today().year
         liststoreMatches.set(newRow, 0, 0, 1, 0, 2, '..-..-' + str(theYear), 3, False, 5, '<None>', 7, '<None>', 8, 0, 9, 0)
 
         # Get the number of results.
