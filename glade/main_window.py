@@ -270,7 +270,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
 
     def _fileBack(self, widget):
         ''' Signal handler for the 'File' → 'Back' menu item. '''
-        if self.database.debug:
+        if self.application.debug:
             print('FileBack')
         if len(self.history) > 0:
             link = self.history.pop()
@@ -287,7 +287,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
         writeFile = open(filename, 'w')
         writeFile.write(self.render.html.toHtml())
         writeFile.close()
-        if self.database.debug:
+        if self.application.debug:
             print('Created \'{}\'.'.format(filename))
 
         # Launch the html with the default viewer.
@@ -415,13 +415,13 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
 
     def _viewDebug(self, widget):
         ''' Signal handler for the 'View' → 'Debug Info' menu item. '''
-        self.database.debug = widget.get_active()
-        if self.database.debug:
+        self.application.debug= widget.get_active()
+        if self.application.debug:
             print('DEBUG is active.')
         else:
             print('DEBUG is off.')
 
-        if self.database.debug:
+        if self.application.debug:
             # Add the debug stylesheet.
             self.render.html.stylesheets.append('file://' + os.path.dirname(os.path.realpath(__file__)) + os.sep + 'debug.css')
             for styleSheet in self.render.html.stylesheets:
@@ -604,22 +604,11 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             if len(self.history) > 0:
                 link = self.history.pop()
 
-            self.yearRange.minFirstYear = self.database.currentSport.firstYear
-            self.yearRange.maxLastYear = self.database.currentSport.lastYear
-            dialog = walton.glade.select_years.SelectYears(self.window, self.yearRange)
-            if dialog.selectYears():
-                # Remove any existing year range.
-                # print(link)
-                firstYear = link.find('firstyear')
-                if firstYear > 0:
-                    # This misses the leading & but better than getting the one ?
-                    link = '{}{}'.format(link[0:firstYear], link[firstYear+14:])
-                # print(link)
-                lastYear = link.find('lastyear')
-                if lastYear > 0:
-                    # This misses the leading & but better than getting the one ?
-                    link = '{}{}'.format(link[0:lastYear], link[lastYear+14:])
-                # print(link)
+            if '?' in link:
+                link = f'{link}&show_date=yes'
+            else:
+                link = f'{link}?show_date=yes'
+            print(link)
 
         # Check for an age request.
         if link == 'toogle_age':

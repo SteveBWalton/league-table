@@ -260,6 +260,7 @@ class Render(walton.toolbar.IToolbar):
         if lastResults > 0:
             self.html.add(f'<td colspan="2">Last {lastResults} Matches</td>')
         self.html.addLine('</tr>')
+        # print(sql)
         cursor = cndb.execute(sql)
         count = 0
         for row in cursor:
@@ -330,6 +331,38 @@ class Render(walton.toolbar.IToolbar):
 
             self.html.addLine('</tr>')
         self.html.addLine('</table>')
+
+
+
+    def displaySelectDates(self, linkTarget, cndb, parameters):
+        ''' Display a select dates fieldset onto the page. '''
+
+        # Decode the parameters.
+        startDate = parameters['start_date'] if 'start_date' in parameters else None
+        finishDate = parameters['finish_date'] if 'finish_date' in parameters else None
+
+        # Show the date selector.
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Select Dates</legend>')
+        self.html.addLine(f'<form action="app:{linkTarget}">')
+        for key in parameters:
+            if key in ['start_date', 'finish_date']:
+                # Ignore these keys.
+                pass
+            else:
+                self.html.addLine(f'<input type="hidden" name="{key}" value="{parameters[key]}" />')
+                # print(f'{key} => {parameters[key]}')
+
+        self.html.addLine('<table>')
+        self.html.add(f'<tr><td>Start Date</td><td><input type="date" name="start_date" value="{startDate}" /></td>')
+        self.html.add(f'<td>Finish Date</td><td><input type="date" name="finish_date" value="{finishDate}" /></td></tr>')
+        self.html.add(f'<tr><td>Start Date</td><td>{startDate}</td>')
+        self.html.add(f'<td>Finish Date</td><td>{finishDate}</td></tr>')
+        self.html.addLine('</table>')
+        self.html.addLine('<input type="submit" name="update" value="OK" />')
+        self.html.addLine('</form>')
+
+
+        self.html.addLine('</fieldset>')
 
 
 
@@ -750,6 +783,7 @@ class Render(walton.toolbar.IToolbar):
         '''
         # Decode the paramters.
         teamIndex = int(parameters['id']) if 'id' in parameters else 1
+        isShowDates = True if 'show_date' in parameters else False
         theDate = parameters['date'] if 'date' in parameters else f'{datetime.date.today()}'
         level = int(parameters['level']) if 'level' in parameters else 0
         isShowAge = True if 'age' in parameters else False
@@ -757,6 +791,8 @@ class Render(walton.toolbar.IToolbar):
         lastYear = parameters['lastyear'] if 'lastyear' in parameters else None
         tournamentIndex = int(parameters['tournamentid']) if 'tournamentid' in parameters else 0
         flags = int(parameters['flags']) if 'flags' in parameters else 0
+        startDate = parameters['start_date'] if 'start_date' in parameters else None
+        finishDate = parameters['finish_date'] if 'finish_date' in parameters else None
 
         # Get the team object.
         team = self.database.getTeam(teamIndex)
@@ -771,10 +807,20 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.add(f'<p><span class="h1">{team.name}</span></p>')
 
+        # Optionally display a dates selector.
+        if isShowDates:
+            self.displaySelectDates('show_team', cndb, parameters)
+
+        if startDate is None:
+            startDate = datetime.date(1900, 1, 1)
+            finishDate = theDate
+        else:
+            theDate = finishDate
+
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Matches</legend>')
         self.html.addLine('<table>')
-        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
-        params = (teamIndex, teamIndex, theDate)
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE >= ? AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
+        params = (teamIndex, teamIndex, startDate, finishDate)
         cursor = cndb.execute(sql, params)
         seasonIndex = 1
         for row in cursor:
@@ -821,7 +867,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
 
         # Show a future matches.
-        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE > ? ORDER BY THE_DATE;"
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE > ? ORDER BY THE_DATE LIMIT 5;"
         params = (teamIndex, teamIndex, theDate)
         cursor = cndb.execute(sql, params)
         seasonIndex = 1
@@ -875,10 +921,10 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Season Summary</legend>')
         sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR, HOME_RESULTS.SEASON_ID FROM "
         sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST, SEASON_ID FROM MATCHES "
-        sql += f"WHERE HOME_TEAM_ID = {teamIndex} AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS HOME_RESULTS "
+        sql += f"WHERE HOME_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS HOME_RESULTS "
         sql += "INNER JOIN "
         sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST, SEASON_ID FROM MATCHES "
-        sql += f"WHERE AWAY_TEAM_ID = {teamIndex} AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS AWAY_RESULTS "
+        sql += f"WHERE AWAY_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS AWAY_RESULTS "
         sql += "ON HOME_RESULTS.SEASON_ID = AWAY_RESULTS.SEASON_ID "
         sql += "ORDER BY HOME_RESULTS.SEASON_ID;"
 
@@ -898,11 +944,11 @@ class Render(walton.toolbar.IToolbar):
                 # Points that teams have score against this team.
                 sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
                 sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
-                sql += f"WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND THE_DATE <= '{theDate}' "
+                sql += f"WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' "
                 sql += "GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
                 sql += "INNER JOIN "
                 sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
-                sql += f"WHERE (AWAY_TEAM_ID = {teamIndex} OR HOME_TEAM_ID = {teamIndex}) AND THE_DATE <= '{theDate}' "
+                sql += f"WHERE (AWAY_TEAM_ID = {teamIndex} OR HOME_TEAM_ID = {teamIndex}) AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' "
                 sql += "GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
                 sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
                 sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC LIMIT 30 OFFSET 1; "
@@ -910,11 +956,11 @@ class Render(walton.toolbar.IToolbar):
                 # Points that this team has scored against these teams.
                 sql = "SELECT HOME_TEAM_ID, AWAY_LOSES, AWAY_DRAWS, AWAY_WINS, AWAY_AGAINST, AWAY_FOR, HOME_LOSES, HOME_DRAWS, HOME_WINS, HOME_AGAINST, HOME_FOR, 3 * (HOME_LOSES + AWAY_LOSES) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, -HOME_FOR - AWAY_FOR + HOME_AGAINST + AWAY_AGAINST AS DIFF, HOME_AGAINST + AWAY_AGAINST AS FOR FROM "
                 sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
-                sql += f"WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND THE_DATE <= '{theDate}' "
+                sql += f"WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' "
                 sql += "GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
                 sql += "INNER JOIN "
                 sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
-                sql += f"WHERE (AWAY_TEAM_ID = {teamIndex} OR HOME_TEAM_ID = {teamIndex}) AND THE_DATE <= '{theDate}' "
+                sql += f"WHERE (AWAY_TEAM_ID = {teamIndex} OR HOME_TEAM_ID = {teamIndex}) AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' "
                 sql += "GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
                 sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
                 sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC LIMIT 30 OFFSET 1; "
@@ -1030,17 +1076,8 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.add('<p><span class="h1">Table of Teams</span></p>')
 
-        self.html.addLine('<fieldset><legend>Control</legend>')
-        self.html.addLine('<form action="app:table_teams">')
-        self.html.addLine('<table>')
-        self.html.add(f'<tr><td>Start Date</td><td><input type="date" name="start_date" value="{startDate}" /></td>')
-        self.html.add(f'<td>Finish Date</td><td><input type="date" name="finish_date" value="{finishDate}" /></td></tr>')
-        self.html.add(f'<tr><td>Start Date</td><td>{startDate}</td>')
-        self.html.add(f'<td>Finish Date</td><td>{finishDate}</td></tr>')
-        self.html.addLine('</table>')
-        self.html.addLine('<input type="submit" name="update" value="OK" />')
-        self.html.addLine('</form>')
-        self.html.addLine('</fieldset>')
+        # Display a dates selector.
+        self.displaySelectDates('table_teams', cndb, parameters)
 
         self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
         if startDate is None or finishDate is None:
