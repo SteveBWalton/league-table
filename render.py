@@ -340,19 +340,41 @@ class Render(walton.toolbar.IToolbar):
         # Decode the parameters.
         startDate = parameters['start_date'] if 'start_date' in parameters else None
         finishDate = parameters['finish_date'] if 'finish_date' in parameters else None
+        dateType = int(parameters['date_type']) if 'date_type' in parameters else 0
 
         # Show the date selector.
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Select Dates</legend>')
         self.html.addLine(f'<form action="app:{linkTarget}">')
         for key in parameters:
-            if key in ['start_date', 'finish_date']:
+            if key in ['start_date', 'finish_date', 'date_type']:
                 # Ignore these keys.
                 pass
             else:
                 self.html.addLine(f'<input type="hidden" name="{key}" value="{parameters[key]}" />')
-                # print(f'{key} => {parameters[key]}')
+            print(f'{key} => {parameters[key]}')
 
         self.html.addLine('<table>')
+        self.html.add(f'<tr><td>Type ({dateType})</td><td colspan="4"><select name="date_type" onchange="this.form.submit();">')
+        if dateType == 0:
+            self.html.add('<option value="0">Free (0)</option>')
+        if dateType == -1:
+            self.html.add('<option value="0" selected="yes">This Season (0)</option>')
+        else:
+            self.html.add('<option value="-1">This Season (-1)</option>')
+        if dateType == -2:
+            self.html.add('<option value="0" selected="yes">Last Season (0)</option>')
+        else:
+            self.html.add('<option value="-2">Last Season (-2)</option>')
+        if dateType == -3:
+            self.html.add('<option value="0" selected="yes">This Year (0)</option>')
+        else:
+            self.html.add('<option value="-3">This Year (-3)</option>')
+        if dateType == -4:
+            self.html.add('<option value="0" selected="yes">Last Year (0)</option>')
+        else:
+            self.html.add('<option value="-4">Last Year (-4)</option>')
+
+        self.html.add('</select></td>')
         self.html.add(f'<tr><td>Start Date</td><td><input type="date" name="start_date" value="{startDate}" /></td>')
         self.html.add(f'<td>Finish Date</td><td><input type="date" name="finish_date" value="{finishDate}" /></td></tr>')
         self.html.add(f'<tr><td>Start Date</td><td>{startDate}</td>')
