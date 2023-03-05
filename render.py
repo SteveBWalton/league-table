@@ -351,28 +351,50 @@ class Render(walton.toolbar.IToolbar):
                 pass
             else:
                 self.html.addLine(f'<input type="hidden" name="{key}" value="{parameters[key]}" />')
-            print(f'{key} => {parameters[key]}')
+            # print(f'{key} => {parameters[key]}')
 
         self.html.addLine('<table>')
-        self.html.add(f'<tr><td>Type ({dateType})</td><td colspan="4"><select name="date_type" onchange="this.form.submit();">')
+        self.html.add('<tr><td>Type</td><td colspan="4"><select name="date_type" onchange="this.form.submit();">')
         if dateType == 0:
-            self.html.add('<option value="0">Free (0)</option>')
+            self.html.add('<option value="0">Free</option>')
         if dateType == -1:
-            self.html.add('<option value="0" selected="yes">This Season (0)</option>')
+            self.html.add('<option value="0" selected="yes">This Season</option>')
+            startDate = '2022-08-06'
+            finishDate = datetime.date.today()
         else:
-            self.html.add('<option value="-1">This Season (-1)</option>')
+            self.html.add('<option value="-1">This Season</option>')
         if dateType == -2:
-            self.html.add('<option value="0" selected="yes">Last Season (0)</option>')
+            self.html.add('<option value="0" selected="yes">Last Season</option>')
+            startDate = '2021-08-14'
+            finishDate = '2022-05-22'
         else:
-            self.html.add('<option value="-2">Last Season (-2)</option>')
+            self.html.add('<option value="-2">Last Season</option>')
         if dateType == -3:
-            self.html.add('<option value="0" selected="yes">This Year (0)</option>')
+            self.html.add('<option value="0" selected="yes">This Year</option>')
+            startDate = f'{datetime.date.today().year}-01-01'
+            finishDate = datetime.date.today()
         else:
-            self.html.add('<option value="-3">This Year (-3)</option>')
+            self.html.add('<option value="-3">This Year</option>')
         if dateType == -4:
-            self.html.add('<option value="0" selected="yes">Last Year (0)</option>')
+            self.html.add('<option value="0" selected="yes">Last Year</option>')
+            startDate = f'{datetime.date.today().year - 1}-01-01'
+            finishDate = f'{datetime.date.today().year - 1}-12-31'
         else:
-            self.html.add('<option value="-4">Last Year (-4)</option>')
+            self.html.add('<option value="-4">Last Year</option>')
+
+        sql = "SELECT ID, LABEL, START, FINISH FROM DATE_BLOCKS ORDER BY ID;"
+        cursor = cndb.execute(sql)
+        for row in cursor:
+            if dateType == row[0]:
+                self.html.add(f'<option value="0" selected="yes">{row[1]}</option>')
+                startDate = row[2]
+                if row[3] is None:
+                    finishDate = datetime.date.today()
+                else:
+                    finishDate = row[3]
+            else:
+                self.html.add(f'<option value="{row[0]}">{row[1]}</option>')
+        cursor = None
 
         self.html.add('</select></td>')
         self.html.add(f'<tr><td>Start Date</td><td><input type="date" name="start_date" value="{startDate}" /></td>')
@@ -383,9 +405,10 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<input type="submit" name="update" value="OK" />')
         self.html.addLine('</form>')
 
-
         self.html.addLine('</fieldset>')
 
+        # Return the date range.
+        return startDate, finishDate
 
 
     def showHome(self, parameters):
@@ -831,7 +854,7 @@ class Render(walton.toolbar.IToolbar):
 
         # Optionally display a dates selector.
         if isShowDates:
-            self.displaySelectDates('show_team', cndb, parameters)
+            startDate, finishDate = self.displaySelectDates('show_team', cndb, parameters)
 
         if startDate is None:
             startDate = datetime.date(1900, 1, 1)
@@ -1084,8 +1107,8 @@ class Render(walton.toolbar.IToolbar):
     def showTableTeams(self, parameters):
         ''' Show a table of teams for all time or between two specified dates. '''
         level = int(parameters['level']) if 'level' in parameters else 0
-        startDate = parameters['start_date'] if 'start_date' in parameters else None
-        finishDate = parameters['finish_date'] if 'finish_date' in parameters else None
+        # startDate = parameters['start_date'] if 'start_date' in parameters else None
+        # finishDate = parameters['finish_date'] if 'finish_date' in parameters else None
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
@@ -1099,7 +1122,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.add('<p><span class="h1">Table of Teams</span></p>')
 
         # Display a dates selector.
-        self.displaySelectDates('table_teams', cndb, parameters)
+        startDate, finishDate = self.displaySelectDates('table_teams', cndb, parameters)
 
         self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
         if startDate is None or finishDate is None:
