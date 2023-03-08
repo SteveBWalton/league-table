@@ -480,26 +480,32 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'Table to {self.database.formatDate(theDate)}')
         self.html.addLine('</legend>')
 
-        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
-        sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
+        sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM ("
+
+        # Summerise all the results.
+        sql += "SELECT TEAM_ID, SUM(HOME_WINS) AS HOME_WINS, SUM(HOME_DRAWS) AS HOME_DRAWS, SUM(HOME_LOSES) AS HOME_LOSES, SUM(HOME_FOR) AS HOME_FOR, SUM(HOME_AGAINST) AS HOME_AGAINST, SUM(AWAY_WINS) AS AWAY_WINS, SUM(AWAY_DRAWS) AS AWAY_DRAWS, SUM(AWAY_LOSES) AS AWAY_LOSES, SUM(AWAY_FOR) AS AWAY_FOR, SUM(AWAY_AGAINST) AS AWAY_AGAINST FROM ("
+
+        # Summerise all the home results.
+        sql += "SELECT HOME_TEAM_ID AS TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST, 0 AS AWAY_WINS, 0 AS AWAY_DRAWS, 0 AS AWAY_LOSES, 0 AS AWAY_FOR, 0 AS AWAY_AGAINST FROM MATCHES "
         if theDate is None:
-            # All Results
-            sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
+            # All season results
+            sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY HOME_TEAM_ID "
         else:
             # Up to the date.
-            sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
-        sql += "INNER JOIN "
-        sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
+            sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY HOME_TEAM_ID "
+        sql += "UNION "
+        # Summerise all the away results.
+        sql += "SELECT AWAY_TEAM_ID AS TEAM_ID, 0 AS AWAY_WINS, 0 AS AWAY_DRAWS, 0 AS AWAY_LOSES, 0 AS AWAY_FOR, 0 AS AWAY_AGAINST, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES "
         if theDate is None:
-            # All Results.
-            sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
+            # All season results.
+            sql += f"WHERE SEASON_ID = {seasonIndex} GROUP BY AWAY_TEAM_ID  "
         else:
             # Update to the date.
-            sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY AWAY_TEAM_ID) AS AWAY_RESULTS "
-        sql += "ON HOME_RESULTS.HOME_TEAM_ID = AWAY_RESULTS.AWAY_TEAM_ID "
+            sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' GROUP BY AWAY_TEAM_ID  "
+        sql += ") GROUP BY TEAM_ID) "
         sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
+
         # print(sql)
-        # sql .= "USING (TEAM_ID);"
 
         self.displayTable(cndb, sql, level == 1, True, True, season.finishDate if theDate is None else theDate, 5, False)
         self.html.addLine('</fieldset>')
