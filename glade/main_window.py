@@ -608,7 +608,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
                 link = f'{link}&show_date=yes'
             else:
                 link = f'{link}?show_date=yes'
-            print(link)
+            # print(link)
 
         # Check for an age request.
         if link == 'toogle_age':
