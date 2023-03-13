@@ -382,7 +382,7 @@ class Render(walton.toolbar.IToolbar):
         else:
             self.html.add('<option value="-4">Last Year</option>')
 
-        sql = "SELECT ID, LABEL, START, FINISH FROM DATE_BLOCKS ORDER BY ID;"
+        sql = "SELECT ID, LABEL, START, FINISH FROM DATE_BLOCKS ORDER BY ID DESC;"
         cursor = cndb.execute(sql)
         for row in cursor:
             if dateType == row[0]:
