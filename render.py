@@ -396,13 +396,12 @@ class Render(walton.toolbar.IToolbar):
                 self.html.add(f'<option value="{row[0]}">{row[1]}</option>')
         cursor = None
 
-        self.html.add('</select></td>')
-        self.html.add(f'<tr><td>Start Date</td><td><input type="date" name="start_date" value="{startDate}" /></td>')
-        self.html.add(f'<td>Finish Date</td><td><input type="date" name="finish_date" value="{finishDate}" /></td></tr>')
-        self.html.add(f'<tr><td>Start Date</td><td>{startDate}</td>')
-        self.html.add(f'<td>Finish Date</td><td>{finishDate}</td></tr>')
+        self.html.add('</select></td><td>')
+        self.html.add('<input type="submit" name="update" value="OK" />')
+        self.html.addLine('</td></tr>')
+        self.html.add(f'<tr style="border: 1px solid black;"><td>Start Date</td><td><input type="date" name="start_date" value="{startDate}" /></td><td style="padding-right: 20px;">{startDate}</td>')
+        self.html.add(f'<td style="border-left: 1px solid black; padding-left: 20px;">Finish Date</td><td><input type="date" name="finish_date" value="{finishDate}" /></td><td>{finishDate}</td></tr>')
         self.html.addLine('</table>')
-        self.html.addLine('<input type="submit" name="update" value="OK" />')
         self.html.addLine('</form>')
 
         self.html.addLine('</fieldset>')
@@ -861,6 +860,7 @@ class Render(walton.toolbar.IToolbar):
         # Optionally display a dates selector.
         if isShowDates:
             startDate, finishDate = self.displaySelectDates('show_team', cndb, parameters)
+            self.html.addLine('<br />')
 
         if startDate is None:
             startDate = datetime.date(1900, 1, 1)
