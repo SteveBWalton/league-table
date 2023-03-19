@@ -219,7 +219,6 @@ class Render(walton.toolbar.IToolbar):
 
     def displayTable(self, cndb, sql, isCombinedHomeAway, isAddColour, isShowRange, theDate, lastResults, isBySeason):
         ''' Display a table on the html object. '''
-
         if isShowRange:
             isShowPossiblePoints = False
             cursor = cndb.execute(sql)
@@ -227,13 +226,17 @@ class Render(walton.toolbar.IToolbar):
             minPoints = 0
             maxPoints = 0
             safePoints = 0
+            arrayPoints = []
             for row in cursor:
                 count += 1
                 played = row[1] + row[2] + row[3] + row[6] + row[7] + row[8]
                 if played < 38:
                     isShowPossiblePoints = True
                 teamMinPoints = row[11]
-                teamMaxPoints = teamMinPoints + (38 - played) * 3
+                remainingMatches = 38 - played
+                teamMaxPoints = teamMinPoints + remainingMatches * 3
+                goalDifference = row[12]
+                arrayPoints.append((teamMinPoints + (goalDifference - 2 * remainingMatches) / 1000.0, teamMaxPoints + (goalDifference + 2 * remainingMatches) / 1000.0))
                 if count == 1:
                     minPoints = teamMinPoints
                     maxPoints = teamMaxPoints
@@ -247,6 +250,7 @@ class Render(walton.toolbar.IToolbar):
                 elif count == 18:
                     safePoints = (int)(math.ceil((safePoints + (int)(math.ceil(38 * row[11] / played))) / 2))
             cursor.close()
+
         self.html.addLine('<table>')
         if isCombinedHomeAway:
             self.html.add('<tr><td colspan="2">Team</td><td style="text-align: right;">P</td><td style="text-align: right;">W</td><td style="text-align: right;">D</td><td style="text-align: right;">L</td><td style="text-align: right;">F</td><td style="text-align: right;">A</td>')
@@ -322,8 +326,29 @@ class Render(walton.toolbar.IToolbar):
                 if count >= 17:
                     self.html.add(f'<td title="Expected safe points are {safePoints}.">')
                 else:
-                    self.html.add('<td>')
+                    self.html.add('<td style="white-space: nowrap;">')
                 self.drawPossiblePointsBox(200, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, 38 * row[11] / played, safePoints)
+
+                # Show possible final ranking.
+                goalDifference = row[12]
+                teamMinPoints += goalDifference / 1000.0
+                teamMaxPoints += goalDifference / 1000.0
+                count1 = 0
+                count2 = 0
+                for points in arrayPoints:
+                    # print(f'{points[0]} {points[1]} {teamMaxPoints} {teamMinPoints}')
+                    if teamMinPoints >= points[1]:
+                        count1 += 1
+                    if teamMaxPoints >= points[0]:
+                        count2 += 1
+                # print()
+                count2 = 21 - count2
+                count1 = 20 - count1
+                if count1 != count2:
+                    self.html.add(f' {count2}-{count1}')
+                else:
+                    self.html.add(f' {count1}')
+
                 self.html.add('</td>')
 
             if lastResults > 0:
@@ -410,6 +435,7 @@ class Render(walton.toolbar.IToolbar):
         return startDate, finishDate
 
 
+
     def showHome(self, parameters):
         '''
         Render the homepage on the html object.
@@ -423,6 +449,7 @@ class Render(walton.toolbar.IToolbar):
         # if 'date' in parameters:
         #    print(parameters['date'])
         theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
+        isRange = True
 
         # Check the the date is in season range.
         season = self.database.getSeason(seasonIndex)
