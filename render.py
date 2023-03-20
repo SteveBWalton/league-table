@@ -258,9 +258,8 @@ class Render(walton.toolbar.IToolbar):
             self.html.add('<tr><td colspan="2">Team</td><td style="text-align: right;">P</td><td style="text-align: right;">W</td><td style="text-align: right;">D</td><td style="text-align: right;">L</td><td style="text-align: right;">F</td><td style="text-align: right;">A</td><td style="text-align: right;">W</td><td style="text-align: right;">D</td><td style="text-align: right;">L</td><td style="text-align: right;">F</td><td style="text-align: right;">A</td>')
         self.html.add('<td style="text-align: right;">Pts</td><td style="text-align: right;">Dif</td>')
         self.html.add('<td style="text-align: center;">Ratio</td>')
-        if isShowRange:
-            if isShowPossiblePoints:
-                self.html.add('<td>Possible Points</td>')
+        if isShowRange and isShowPossiblePoints:
+            self.html.add('<td colspan="2">Possible Points</td>')
         if lastResults > 0:
             self.html.add(f'<td colspan="2">Last {lastResults} Matches</td>')
         self.html.addLine('</tr>')
@@ -317,7 +316,7 @@ class Render(walton.toolbar.IToolbar):
             self.drawWinDrawLossBox(200, 18, row[1] + row[6], row[2] + row[7], row[3] + row[8])
             self.html.add('</td>')
 
-            if isShowRange and played < 38:
+            if isShowRange and isShowPossiblePoints:
                 teamMinPoints = row[11]
                 teamMaxPoints = teamMinPoints + (38 - played) * 3
                 if teamMaxPoints > maxPoints:
@@ -328,8 +327,10 @@ class Render(walton.toolbar.IToolbar):
                 else:
                     self.html.add('<td style="white-space: nowrap;">')
                 self.drawPossiblePointsBox(200, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, 38 * row[11] / played, safePoints)
+                self.html.add('</td>')
 
                 # Show possible final ranking.
+                self.html.add(f'<td class="rank" style="white-space: nowrap; text-align: center;" title="{team.name} maximum points are {teamMaxPoints}.">')
                 goalDifference = row[12]
                 teamMinPoints += goalDifference / 1000.0
                 teamMaxPoints += goalDifference / 1000.0
@@ -348,7 +349,6 @@ class Render(walton.toolbar.IToolbar):
                     self.html.add(f' {count2}-{count1}')
                 else:
                     self.html.add(f' {count1}')
-
                 self.html.add('</td>')
 
             if lastResults > 0:
