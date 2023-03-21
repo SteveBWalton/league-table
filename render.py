@@ -83,7 +83,8 @@ class Render(walton.toolbar.IToolbar):
             'show_team'         : self.showTeam,
             'head'              : self.showHeadToHead,
             'table_teams'       : self.showTableTeams,
-            'table_last'        : self.showTableLast
+            'table_last'        : self.showTableLast,
+            'table_subset'      : self.showTableSubset
         }
 
 
@@ -648,11 +649,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<ul>')
         self.html.addLine('<li><a href="app:table_teams">All Time Table</a></li>')
         self.html.addLine('<li><a href="app:table_last">Table of last 5 Results</a></li>')
-        self.html.addLine('<li><a href="app:tournament_winners">Tournament Results</a></li>')
-        self.html.addLine('<li><a href="app:show_season">Season Results</a></li>')
-        self.html.addLine('<li><a href="app:table_matches">Table of Match Wins</a></li>')
-        self.html.addLine('<li><a href="app:list_matches">List of Matches</a></li>')
-        self.html.addLine('<li><a href="app:table_headtohead">Table of Head to Heads</a></li>')
+        self.html.addLine('<li><a href="app:table_subset">Table of Subset of teams</a></li>')
         self.html.addLine('</ul>')
         self.html.addLine('</fieldset>')
 
@@ -1430,3 +1427,10 @@ class Render(walton.toolbar.IToolbar):
         # Set the page flags.
         self.levels = None
         self.clipboardText = None
+
+
+
+    def showTableSubset(self, parameters):
+        ''' Show a table of a subset of the teams. '''
+        self.html.clear()
+        self.html.add(f'<p><span class="h1">Subset of Teams</span></p>')
