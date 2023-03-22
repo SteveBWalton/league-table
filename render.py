@@ -1432,5 +1432,87 @@ class Render(walton.toolbar.IToolbar):
 
     def showTableSubset(self, parameters):
         ''' Show a table of a subset of the teams. '''
+        seasonIndex = int(parameters['season']) if 'season' in parameters else 1
+        theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
+
+        season = self.database.getSeason(seasonIndex)
+
+        if season.getPreviousSeasonIndex() is None:
+            previousSeason = None
+        else:
+            previousSeason = f'table_subset?season={season.getPreviousSeasonIndex()}'
+        if season.getNextSeasonIndex() is None:
+            nextSeason = None
+        else:
+            nextSeason = f'table_subset?season={season.getNextSeasonIndex()}'
+
         self.html.clear()
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, None, previousSeason, nextSeason, False, False, False)
         self.html.add(f'<p><span class="h1">Subset of Teams</span></p>')
+
+        # Connect to the database.
+        cndb = sqlite3.connect(self.database.filename)
+
+        if 'exclude' in parameters:
+            sql = f"UPDATE TEAMS SET SUB_GROUP = 0 WHERE ID = {parameters['exclude']}"
+            cndb.execute(sql)
+            cndb.commit()
+        if 'include' in parameters:
+            sql = f"UPDATE TEAMS SET SUB_GROUP = 1 WHERE ID = {parameters['include']}"
+            cndb.execute(sql)
+            cndb.commit()
+
+        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>')
+        if theDate is None:
+            self.html.add('Final Table')
+        else:
+            self.html.add(f'Table to {self.database.formatDate(theDate)}')
+        self.html.addLine('</legend>')
+
+        sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM ("
+
+        # Summerise all the results.
+        sql += "SELECT TEAM_ID, SUM(HOME_WINS) AS HOME_WINS, SUM(HOME_DRAWS) AS HOME_DRAWS, SUM(HOME_LOSES) AS HOME_LOSES, SUM(HOME_FOR) AS HOME_FOR, SUM(HOME_AGAINST) AS HOME_AGAINST, SUM(AWAY_WINS) AS AWAY_WINS, SUM(AWAY_DRAWS) AS AWAY_DRAWS, SUM(AWAY_LOSES) AS AWAY_LOSES, SUM(AWAY_FOR) AS AWAY_FOR, SUM(AWAY_AGAINST) AS AWAY_AGAINST FROM ("
+
+        # Summerise all the home results.
+        sql += "SELECT HOME_TEAM_ID AS TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST, 0 AS AWAY_WINS, 0 AS AWAY_DRAWS, 0 AS AWAY_LOSES, 0 AS AWAY_FOR, 0 AS AWAY_AGAINST FROM MATCHES INNER JOIN TEAMS AS HOME_TEAM ON MATCHES.HOME_TEAM_ID = HOME_TEAM.ID  INNER JOIN TEAMS AS AWAY_TEAM ON MATCHES.AWAY_TEAM_ID = AWAY_TEAM.ID "
+        if theDate is None:
+            # All season results
+            sql += f"WHERE SEASON_ID = {seasonIndex} AND HOME_TEAM.SUB_GROUP = 1 AND AWAY_TEAM.SUB_GROUP = 1 GROUP BY HOME_TEAM_ID "
+        else:
+            # Up to the date.
+            sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' AND HOME_TEAM.SUB_GROUP = 1 AND AWAY_TEAM.SUB_GROUP = 1 GROUP BY HOME_TEAM_ID "
+        sql += "UNION "
+        # Summerise all the away results.
+        sql += "SELECT AWAY_TEAM_ID AS TEAM_ID, 0 AS AWAY_WINS, 0 AS AWAY_DRAWS, 0 AS AWAY_LOSES, 0 AS AWAY_FOR, 0 AS AWAY_AGAINST, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST FROM MATCHES INNER JOIN TEAMS AS HOME_TEAM ON MATCHES.HOME_TEAM_ID = HOME_TEAM.ID  INNER JOIN TEAMS AS AWAY_TEAM ON MATCHES.AWAY_TEAM_ID = AWAY_TEAM.ID "
+        if theDate is None:
+            # All season results.
+            sql += f"WHERE SEASON_ID = {seasonIndex} AND HOME_TEAM.SUB_GROUP = 1 AND AWAY_TEAM.SUB_GROUP = 1 GROUP BY AWAY_TEAM_ID "
+        else:
+            # Update to the date.
+            sql += f"WHERE SEASON_ID = {seasonIndex} AND THE_DATE <= '{theDate}' AND HOME_TEAM.SUB_GROUP = 1 AND AWAY_TEAM.SUB_GROUP = 1 GROUP BY AWAY_TEAM_ID "
+        sql += ") GROUP BY TEAM_ID) "
+        sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
+
+        # print(sql)
+
+        self.displayTable(cndb, sql, False, False, False, season.finishDate if theDate is None else theDate, 5, False)
+        self.html.addLine('</fieldset>')
+
+        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>Included</legend>')
+        sql = "SELECT ID, LABEL FROM TEAMS WHERE SUB_GROUP = 1 ORDER BY LABEL;"
+        cursor = cndb.execute(sql)
+        for row in cursor:
+            self.html.addLine(f'<p><a href="app:table_subset?season={seasonIndex}&exclude={row[0]}">{row[1]}</p>')
+        self.html.addLine('</fieldset>')
+
+
+        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>Excluded</legend>')
+        sql = "SELECT ID, LABEL FROM TEAMS WHERE SUB_GROUP = 0 ORDER BY LABEL;"
+        cursor = cndb.execute(sql)
+        for row in cursor:
+            self.html.addLine(f'<p><a href="app:table_subset?season={seasonIndex}&include={row[0]}">{row[1]}</p>')
+        self.html.addLine('</fieldset>')
+
+        # Close the database.
+        cndb.close()
