@@ -1499,19 +1499,20 @@ class Render(walton.toolbar.IToolbar):
         self.displayTable(cndb, sql, False, False, False, season.finishDate if theDate is None else theDate, 5, False)
         self.html.addLine('</fieldset>')
 
-        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>Included</legend>')
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;">')
+        self.html.addLine('<legend>Included</legend>')
         sql = "SELECT ID, LABEL FROM TEAMS WHERE SUB_GROUP = 1 ORDER BY LABEL;"
         cursor = cndb.execute(sql)
         for row in cursor:
-            self.html.addLine(f'<p><a href="app:table_subset?season={seasonIndex}&exclude={row[0]}">{row[1]}</p>')
+            self.html.addLine(f'<p><a href="app:table_subset?season={seasonIndex}&exclude={row[0]}">{row[1]}</a></p>')
         self.html.addLine('</fieldset>')
 
-
-        self.html.add('<fieldset style="display: inline-block; vertical-align: top;"><legend>Excluded</legend>')
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;">')
+        self.html.addLine('<legend>Excluded</legend>')
         sql = "SELECT ID, LABEL FROM TEAMS WHERE SUB_GROUP = 0 ORDER BY LABEL;"
         cursor = cndb.execute(sql)
         for row in cursor:
-            self.html.addLine(f'<p><a href="app:table_subset?season={seasonIndex}&include={row[0]}">{row[1]}</p>')
+            self.html.addLine(f'<p><a href="app:table_subset?season={seasonIndex}&include={row[0]}">{row[1]}</a></p>')
         self.html.addLine('</fieldset>')
 
         # Close the database.
