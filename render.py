@@ -336,16 +336,14 @@ class Render(walton.toolbar.IToolbar):
                 teamMinPoints += goalDifference / 1000.0
                 teamMaxPoints += goalDifference / 1000.0
                 count1 = 0
-                count2 = 0
+                count2 = 1
                 for points in arrayPoints:
-                    # print(f'{points[0]} {points[1]} {teamMaxPoints} {teamMinPoints}')
-                    if teamMinPoints >= points[1]:
+                    if teamMinPoints <= points[1]:
                         count1 += 1
-                    if teamMaxPoints >= points[0]:
+                    if teamMaxPoints < points[0]:
                         count2 += 1
+                    # print(f'{points[0]:.3f} {points[1]:.3f} {teamMaxPoints:.3f} {teamMinPoints:.3f} {count1:3} {count2:3}')
                 # print()
-                count2 = 21 - count2
-                count1 = 20 - count1
                 if count1 != count2:
                     self.html.add(f' {count2}-{count1}')
                 else:
