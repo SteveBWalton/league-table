@@ -1490,7 +1490,6 @@ class Render(walton.toolbar.IToolbar):
 
         sql += f"WHERE THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}' AND HOME_TEAM.SUB_GROUP = 1 AND AWAY_TEAM.SUB_GROUP = 1 GROUP BY AWAY_TEAM_ID "
 
-
         sql += ") GROUP BY TEAM_ID) "
         sql += "ORDER BY PTS DESC, DIFF DESC, FOR DESC; "
 
