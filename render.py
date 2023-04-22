@@ -327,7 +327,7 @@ class Render(walton.toolbar.IToolbar):
                     self.html.add(f'<td title="Expected safe points are {safePoints}.">')
                 else:
                     self.html.add('<td style="white-space: nowrap;">')
-                self.drawPossiblePointsBox(200, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, 38 * row[11] / played, safePoints)
+                self.drawPossiblePointsBox(400, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, 38 * row[11] / played, safePoints)
                 self.html.add('</td>')
 
                 # Show possible final ranking.

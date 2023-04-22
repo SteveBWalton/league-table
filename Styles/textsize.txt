@@ -9,7 +9,7 @@ legend { font-size: 7pt; }
 .years { font-size: [FONT-SIZE]; }
 .date { font-size: [FONT-SIZE]; }
 .date_guess { font-size: [FONT-SIZE]; }
-.rank { font-size: [FONT-SIZE,-4,>7]; }
+.rank { font-size: [FONT-SIZE,-4,>8]; }
 .seed { font-size: 7pt; }
 .label { font-size: [FONT-SIZE,+1]; }
 .location { font-size: 7pt; }
