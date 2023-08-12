@@ -57,6 +57,12 @@ class Season:
         self._nextSeasonIndex = None
         # The index of the previous season.
         self._previousSeasonIndex = None
+        # Number of matches this season.
+        self.numMatches = None
+        # A good finish position.
+        self.goodPos = None
+        # A bad finish position.
+        self.badPos = None
 
 
 
@@ -111,7 +117,7 @@ class Season:
         cndb = sqlite3.connect(self.database.filename)
 
         # sql = 'SELECT Name, CountryID, DoB, DoD, FirstYear, LastYear, Comments, InternetURL FROM Teams WHERE ID = ?;'
-        sql = 'SELECT LABEL, START_DATE, FINISH_DATE, COMMENTS FROM SEASONS WHERE ID = ?;'
+        sql = 'SELECT LABEL, START_DATE, FINISH_DATE, COMMENTS, NUM_MATCHES, GOOD_POS, BAD_POS FROM SEASONS WHERE ID = ?;'
         params = (seasonIndex, )
         cursor = cndb.execute(sql, params)
         row = cursor.fetchone()
@@ -127,15 +133,23 @@ class Season:
         self.startDate = datetime.date(*time.strptime(row[1], "%Y-%m-%d")[:3]) if row[1] is not None else None
         self.finishDate = datetime.date(*time.strptime(row[2], "%Y-%m-%d")[:3]) if row[2] is not None else None
         self.comments = row[3]
+        self.numMatches = row[4]
+        self.goodPos = row[5]
+        self.badPos = row[6]
 
         # For debugging.
         if self.index == 1:
             self._previousSeasonIndex = 2
+            self._nextSeasonIndex = 4
         elif self.index == 2:
             self._nextSeasonIndex = 1
             self._previousSeasonIndex = 3
         elif self.index == 3:
             self._nextSeasonIndex = 2
+        else:
+            # self._previousSeasonIndex = self.index - 1
+            self._previousSeasonIndex = 1
+            self._nextSeasonIndex = None
 
         # Close the database.
         cndb.close()
