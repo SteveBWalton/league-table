@@ -186,7 +186,7 @@ class Render(walton.toolbar.IToolbar):
 
 
 
-    def drawPossiblePointsBox(self, width, height, minimum, maximum, scaleMin, scaleMax, expectedPoints, safePoints):
+    def drawPossiblePointsBox(self, width, height, minimum, maximum, scaleMin, scaleMax, expectedPoints, safePoints, requiredPoints):
         ''' Draws a svg graphical box to display the specified wins, draws and losses ratio.
 
         :param int width: Specifies the width of the box.  Default to 200.
@@ -208,9 +208,15 @@ class Render(walton.toolbar.IToolbar):
         # Border.
         self.html.add('<rect class="wdlbox" width="{}" height="{}" style="fill: none; stroke-width: 2;" />'.format(width, height))
         # Draw a tick mark at safe point points.
-        tickPos = int(round(width * (safePoints - scaleMin) / (scaleMax - scaleMin), 0))
-        self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
-        self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
+        if safePoints > 0:
+            tickPos = int(round(width * (safePoints - scaleMin) / (scaleMax - scaleMin), 0))
+            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
+            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
+        # Draw a tick mark at required points.
+        if requiredPoints > 0:
+            tickPos = int(round(width * (requiredPoints - scaleMin) / (scaleMax - scaleMin), 0))
+            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
+            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
         # Draw a line at expected points.
         tickPos = int(round(width * (expectedPoints - scaleMin) / (scaleMax - scaleMin), 0))
         self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="{height}" style="stroke-width: 2;" />')
@@ -227,14 +233,15 @@ class Render(walton.toolbar.IToolbar):
             minPoints = 0
             maxPoints = 0
             safePoints = 0
+            requiredPoints = 0
             arrayPoints = []
             for row in cursor:
                 count += 1
                 played = row[1] + row[2] + row[3] + row[6] + row[7] + row[8]
-                if played < 38:
+                if played < season.numMatches:
                     isShowPossiblePoints = True
                 teamMinPoints = row[11]
-                remainingMatches = 38 - played
+                remainingMatches = season.numMatches - played
                 teamMaxPoints = teamMinPoints + remainingMatches * 3
                 goalDifference = row[12]
                 arrayPoints.append((teamMinPoints + (goalDifference - 2 * remainingMatches) / 1000.0, teamMaxPoints + (goalDifference + 2 * remainingMatches) / 1000.0))
@@ -246,10 +253,14 @@ class Render(walton.toolbar.IToolbar):
                         maxPoints = teamMaxPoints
                     if teamMinPoints < minPoints:
                         minPoints = teamMinPoints
-                if count == 17:
-                    safePoints = (int)(math.ceil(38 * row[11] / played))
-                elif count == 18:
-                    safePoints = (int)(math.ceil((safePoints + (int)(math.ceil(38 * row[11] / played))) / 2))
+                if count == season.badPos:
+                    safePoints = (int)(math.ceil(season.numMatches * row[11] / played))
+                elif count == season.badPos + 1:
+                    safePoints = (int)(math.ceil((safePoints + (int)(math.ceil(season.numMatches * row[11] / played))) / 2))
+                if count == season.goodPos:
+                    requiredPoints = (int)(math.ceil(season.numMatches * row[11] / played))
+                if count == season.goodPos + 1:
+                    requiredPoints = (int)(math.ceil((requiredPoints + (int)(math.ceil(season.numMatches * row[11] / played))) / 2))
             cursor.close()
 
         self.html.addLine('<table>')
@@ -319,15 +330,17 @@ class Render(walton.toolbar.IToolbar):
 
             if isShowRange and isShowPossiblePoints:
                 teamMinPoints = row[11]
-                teamMaxPoints = teamMinPoints + (38 - played) * 3
+                teamMaxPoints = teamMinPoints + (season.numMatches - played) * 3
                 if teamMaxPoints > maxPoints:
                     maxPoints = teamMaxPoints
                 # self.html.add(f'<td class="minor" style="text-align: right;">{teamMaxPoints}</td>')
-                if count >= 17:
+                if count >= season.badPos:
                     self.html.add(f'<td title="Expected safe points are {safePoints}.">')
+                elif count <= season.goodPos:
+                    self.html.add(f'<td title="Expected required points are {requiredPoints}.">')
                 else:
                     self.html.add('<td style="white-space: nowrap;">')
-                self.drawPossiblePointsBox(400, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, 38 * row[11] / played, safePoints)
+                self.drawPossiblePointsBox(400, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, season.numMatches * row[11] / played, safePoints, requiredPoints)
                 self.html.add('</td>')
 
                 # Show possible final ranking.
@@ -1198,7 +1211,7 @@ class Render(walton.toolbar.IToolbar):
     def showTableLast(self, parameters):
         ''' Show a table of team last (5) results. '''
         lastResults = int(parameters['last']) if 'last' in parameters else 5
-        seasonIndex = int(parameters['season']) if 'season' in parameters else 1
+        seasonIndex = int(parameters['season']) if 'season' in parameters else 4
         theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
         level = int(parameters['level']) if 'level' in parameters else 0
 
@@ -1228,7 +1241,7 @@ class Render(walton.toolbar.IToolbar):
         if season.comments is not None or len(links) > 0:
             #self.html.add('<p>')
             if season.comments is not None:
-                self.html.add(' {}'.format(team.comments))
+                self.html.add(' {}'.format(season.comments))
             if len(links) > 0:
                 self.html.add(' <span class="label">More information at</span>')
                 count = 0
