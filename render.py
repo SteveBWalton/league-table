@@ -281,6 +281,8 @@ class Render(walton.toolbar.IToolbar):
         for row in cursor:
             if isAddColour and count < season.goodPos:
                 self.html.add('<tr class="win2">')
+            elif isAddColour and count < season.goodPos2:
+                self.html.add('<tr class="win3">')
             elif isAddColour and count >= season.badPos:
                 self.html.add('<tr class="lost2">')
             else:

@@ -63,6 +63,8 @@ class Season:
         self.goodPos = None
         # A bad finish position.
         self.badPos = None
+        # A not quite as good finish position.
+        self.goodPos2 = None
 
 
 
@@ -136,6 +138,11 @@ class Season:
         self.numMatches = row[4]
         self.goodPos = row[5]
         self.badPos = row[6]
+        # TODO: Read this from the database!
+        if self.goodPos == 2:
+            self.goodPos2 = 6
+        else:
+            self.goodPos2 = self.goodPos
 
         # For debugging.
         if self.index == 1:

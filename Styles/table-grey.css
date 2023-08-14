@@ -11,6 +11,8 @@ div.toolbar { background-color: black; color: white; }
 .lost { color: red; }
 .win2 { background-color: #CCFFCC;}
 .lost2 { background-color: #FFCCCC;}
+.win3 { background-color: #DDEEDD;}
+.lost3 { background-color: #EEDDDD;}
 .draw { color: darkkhaki; }
 .draw2 { background-color: #E0E0E0; }
 .age { color: grey ;}
