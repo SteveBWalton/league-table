@@ -153,10 +153,13 @@ class Season:
             self._previousSeasonIndex = 3
         elif self.index == 3:
             self._nextSeasonIndex = 2
-        else:
-            # self._previousSeasonIndex = self.index - 1
+            self._previousSeasonIndex = 5
+        elif self.index == 4:
             self._previousSeasonIndex = 1
             self._nextSeasonIndex = None
+        elif self.index == 5:
+            self._previousSeasonIndex = None
+            self._nextSeasonIndex = 3
 
         # Close the database.
         cndb.close()

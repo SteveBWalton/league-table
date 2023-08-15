@@ -350,18 +350,34 @@ class EditSeason:
 
     def writeChanges(self):
         ''' Write the contents of the dialog to the database. '''
+        # Season Label.
         entrySeason = self.builder.get_object('entrySeason')
         self.season.name = entrySeason.get_text()
+
+        # Comments.
+        textviewComments = self.builder.get_object("textviewComments")
+        commentsBuffer = textviewComments.get_buffer()
+        bufferStart = commentsBuffer.get_iter_at_line_offset(0, 0)
+        bufferEnd = commentsBuffer.get_end_iter()
+        self.season.comments = commentsBuffer.get_text(bufferStart, bufferEnd, False)
 
 
 
     def populateDialog(self):
         ''' Populate the dialog with settings from the season object. '''
+
+        # Season Label.
         entrySeason = self.builder.get_object('entrySeason')
         try:
             entrySeason.set_text(self.season.name)
         except:
             pass
+
+        # Initialise the comments.
+        if self.season.comments is not None:
+            textviewComments = self.builder.get_object("textviewComments")
+            commentsBuffer = textviewComments.get_buffer()
+            commentsBuffer.set_text(self.season.comments)
 
 
 

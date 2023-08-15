@@ -493,12 +493,9 @@ class EditMatches:
         if self.database == None:
             return
 
-        # print 'Populate Matches Season {} TournamentID {}'.format(theYear,tournamentIndex)
-        entrySeason = self.builder.get_object('entrySeason')
-        try:
-            entrySeason.set_text(self.seasonIndex)
-        except:
-            pass
+        # Label Season.
+        labelSeason = self.builder.get_object('labelSeason')
+        labelSeason.set_text(self.season.name)
 
         comboboxMode = self.builder.get_object('comboboxMode')
         comboboxMode.set_active(0)
