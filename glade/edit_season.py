@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 '''
-Module to support the Edit Matches dialog.
-This module implements the :py:class:`EditMatches` class.
+Module to support the Edit Season dialog.
+This module implements the :py:class:`EditSeason` class.
 '''
 
 
@@ -21,7 +21,6 @@ import os
 from datetime import timedelta
 
 # Application libraries.
-import glade.edit_season
 #import glade.edit_team
 #import glade.edit_location
 #import glade.edit_season
@@ -29,85 +28,57 @@ import glade.edit_season
 
 
 
-class EditMatches:
+class EditSeason:
     '''
-    Class to represent the dialog that allows the user to edit match results.
-    This is the way that the user enters data into the program.
+    Class to represent the dialog that allows the user to edit seasons.
 
     :ivar Database database: The Database to edit results in.
-    :ivar int tournamentDetails: The details level of the current tournament.
-    :ivar int year: The year of the current edits.
-    :ivar int tournamentIndex: The ID of the tournament of the current edits.
-    :ivar bool isChanged: True if the current edits are not written to the database.  False if there are no changes on the current edits.
+    :ivar Season season: The season object to edit.
     :ivar Gtk.Builder builder: The GTK builder for the dialog.
     :ivar Gtk.Dialog dialog: The actial GTK dialog.
-    :ivar list linksDelete: The list of link IDs to delete.
     '''
 
 
 
     def __init__(self, parentWindow):
         '''
-        Class constructor for the :py:class:`EditMatches` class.
+        Class constructor for the :py:class:`EditSeason` class.
         Construct the dialog but do not show it.
-        Call :py:func:`editMatches` to actually show the dialog.
+        Call :py:func:`editSeason` to actually show the dialog.
 
         :param Gtk.Window parentWindow: Specify the GTK+ parent window for the dialog.
         '''
         # Initialise member variables.
         self.database = None
-        self.tournamentDetails = -1
-        # self.year = -1
-        # self.tournamentIndex = -1
-        self.isChanged = False
-        # The link IDs to delete.
-        self.linksDelete = []
-        # The match records to delete.
-        self.matchesDelete = []
+        self.season = None
 
         # The GTK builder for the dialog.
         self.builder = Gtk.Builder()
-        self.builder.add_from_file('{}/edit_matches.glade'.format(os.path.dirname(os.path.realpath(__file__))))
+        self.builder.add_from_file('{}/edit_season.glade'.format(os.path.dirname(os.path.realpath(__file__))))
         # The actual GTK dialog.
-        self.dialog = self.builder.get_object('dialogEditMatches')
+        self.dialog = self.builder.get_object('dialogEditSeason')
         self.dialog.set_transient_for(parentWindow)
 
         # Custom settings that don't work from glade.
-        cellrenderertextHomeScore = self.builder.get_object('cellrenderertextHomeScore')
-        cellrenderertextHomeScore.set_alignment(0.5, 0.5)
-        cellrenderertextAwayScore = self.builder.get_object('cellrenderertextAwayScore')
-        cellrenderertextAwayScore.set_alignment(0.5, 0.5)
-        #cellrenderertextSeed1 = self.builder.get_object('cellrenderertextSeed1')
-        #cellrenderertextSeed1.set_alignment(0.5, 0.5)
-        #cellrenderertextSeed2 = self.builder.get_object('cellrenderertextSeed2')
-        #cellrenderertextSeed2.set_alignment(0.5, 0.5)
 
         # Add the events to the dialog.
-        signals = {
-            'on_cmdAddRow_clicked'                  : self._addRow,
-            'on_cmdDeleteRow_clicked'               : self._deleteRow,
-
-            'on_cellrenderercomboDate_edited'       : self._matchDateEdited,
-            'on_cellrendertoggleDateGuess_toggled'  : self._dateGuessToggled,
-            'on_cellrenderercomboTeam1_changed'     : self._homeTeamChanged,
-            'on_cellrenderertextScore_edited'       : self._homeScoreEdited,
-            'on_cellrenderercomboTeam2_changed'     : self._awayTeamChanged,
-            'on_cellrenderertextAwayScore_edited'   : self._awayScoreEdited,
-            'on_buttonEditSeason_clicked'           : self._editSeason,
-        }
-        self.builder.connect_signals(signals)
+        #signals = {
+        #    'on_cmdAddRow_clicked'                  : self._addRow,
+        #    'on_cmdDeleteRow_clicked'               : self._deleteRow,
+        #
+        #    'on_cellrenderercomboDate_edited'       : self._matchDateEdited,
+        #    'on_cellrendertoggleDateGuess_toggled'  : self._dateGuessToggled,
+        #    'on_cellrenderercomboTeam1_changed'     : self._homeTeamChanged,
+        #    'on_cellrenderertextScore_edited'       : self._homeScoreEdited,
+        #    'on_cellrenderercomboTeam2_changed'     : self._awayTeamChanged,
+        #    'on_cellrenderertextAwayScore_edited'   : self._awayScoreEdited,
+        #}
+        #self.builder.connect_signals(signals)
 
         # Set the add link button as a drag-drop target.
         #buttonAddLink = self.builder.get_object('buttonAddLink')
         #buttonAddLink.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         #buttonAddLink.drag_dest_add_text_targets()
-
-
-
-    def _editSeason(self, widget):
-        ''' Signal handler for the edit season button. '''
-        editSeason = glade.edit_season.EditSeason(self.dialog)
-        editSeason.editSeason(self.database, self.season)
 
 
 
@@ -379,208 +350,35 @@ class EditMatches:
 
     def writeChanges(self):
         ''' Write the contents of the dialog to the database. '''
-        # Get handlers to the liststores.
-        liststoreMatches = self.builder.get_object('liststoreMatches')
-        liststoreTeams = self.builder.get_object('liststoreTeams')
-
-        # Get the current mode.
-        comboboxMode = self.builder.get_object('comboboxMode')
-        modeIter = comboboxMode.get_active_iter()
-        liststoreModes = self.builder.get_object('liststoreModes')
-        activeMode = liststoreModes.get_value(modeIter, 0)
-
-        # Open the database.
-        cndb = sqlite3.connect(self.database.filename)
-
-        # Remove any matches marked for delete.
-        for matchIndex in self.matchesDelete:
-            sql = f"DELETE FROM MATCHES WHERE ID = {matchIndex};"
-            cursor = cndb.execute(sql)
-            cndb.commit()
-
-        # Loop through the liststore of matches.
-        iterMatches = liststoreMatches.get_iter_first()
-        while iterMatches:
-            matchIndex = liststoreMatches.get_value(iterMatches, 0)
-            isChange = True if liststoreMatches.get_value(iterMatches, 1) == 1 else False
-            if isChange:
-                theDate = liststoreMatches.get_value(iterMatches, 2)
-                if theDate == 'None' or theDate[0:1] == '.':
-                    theDate = 'NULL'
-                else:
-                    dtDate = datetime.date(*time.strptime(theDate, "%d-%m-%Y")[:3])
-                    # strftime does not work for years < 1900, so don't use it.
-                    theDate = "'{}-{:0=2}-{:0=2}'".format(dtDate.year, dtDate.month, dtDate.day)
-                isDateGuess = 1 if liststoreMatches.get_value(iterMatches, 3) else 0
-                homeTeamIndex = liststoreMatches.get_value(iterMatches, 4)
-                awayTeamIndex = liststoreMatches.get_value(iterMatches, 6)
-                homeTeamFor = liststoreMatches.get_value(iterMatches, 8)
-                awayTeamFor = liststoreMatches.get_value(iterMatches, 9)
-
-                if matchIndex == 0:
-                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR) VALUES ({self.seasonIndex}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor}, {homeTeamFor}, {awayTeamFor});"
-                else:
-                    if activeMode == 1:
-                        # What if mode.
-                        sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
-                    else:
-                        # Real mode.
-                        sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor}, REAL_HOME_TEAM_FOR = {homeTeamFor}, REAL_AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
-
-                # Execute the command.
-                # print(sql)
-                # cursor = cnDb.execute(sql, params)
-                cursor = cndb.execute(sql)
-                cndb.commit()
-
-            # Move to next record.
-            iterMatches = liststoreMatches.iter_next(iterMatches)
-
-        # Close the database.
-        cndb.close()
-
-        # Mark the data as saved.
-        self.isChanged = False
+        entrySeason = self.builder.get_object('entrySeason')
+        self.season.name = entrySeason.get_text()
 
 
 
-    def populateTeamCombos(self, year):
-        '''
-        Populate the team comboboxes with the available teams.
-        If the sports had retiring teams then only the teams with results around the specified year (and currentSport.lastYearPadding) will be added to the comboxboxes.
-        :param int year: Specifies the year for the teams.  Specify -1 for all teams regarding of currentSport.lastYearPadding.  Specify -3 for extra teams.
-        '''
-        # print('populateTeamCombos')
-
-        # Fetch the liststore
-        liststoreTeams = self.builder.get_object('liststoreTeams')
-        liststoreTeams.clear()
-
-        # Connect to the database.
-        cndb = sqlite3.connect(self.database.filename)
-
-        # Fetch the list of teams.
-        sql = 'SELECT ID, LABEL FROM TEAMS ORDER BY LABEL;'
-        cursor = cndb.execute(sql)
-        for row in cursor:
-            newRow = liststoreTeams.append()
-            teamName = row[1]
-            if row[0] == None:
-                print('Error ({}) "{}"'.format(row[0], teamName))
-            else:
-                liststoreTeams.set(newRow, 0, row[0], 1, teamName)
-        cursor.close()
-
-        # Add the special buttons.
-        #newRow = liststoreTeams.append()
-        #liststoreTeams.set(newRow, 0, 0, 1, '<None>')
-        #if isSpecialOption:
-        #    newRow = liststoreTeams.append()
-        #    liststoreTeams.set(newRow, 0, -1, 1, 'All...')
-        #    newRow = liststoreTeams.append()
-        #    liststoreTeams.set(newRow, 0, -3, 1, 'More...')
-
-        #newRow = liststoreTeams.append()
-        #liststoreTeams.set(newRow, 0, -2, 1, 'New...')
-
-        # Close the database.
-        cndb.close()
-
-
-
-    def populateMatches(self, sql):
-        ''' Populate the dialog with the matches from the year and tournament specified on the dialog. '''
-        if self.database == None:
-            return
-
-        # print 'Populate Matches Season {} TournamentID {}'.format(theYear,tournamentIndex)
+    def populateDialog(self):
+        ''' Populate the dialog with settings from the season object. '''
         entrySeason = self.builder.get_object('entrySeason')
         try:
-            entrySeason.set_text(self.seasonIndex)
+            entrySeason.set_text(self.season.name)
         except:
             pass
 
-        comboboxMode = self.builder.get_object('comboboxMode')
-        comboboxMode.set_active(0)
-
-        # Connect to the database.
-        cndb = sqlite3.connect(self.database.filename)
-
-        # If the year has changed then load another group of players.
-        self.populateTeamCombos(0)
-
-        if sql == '':
-            return
-        # print(sql)
-
-        # Build the list of actual matches.
-        liststoreMatches = self.builder.get_object('liststoreMatches')
-        liststoreMatches.clear()
-
-        # Fetch the list of matches in this tournament.
-        cursor = cndb.execute(sql)
-        for row in cursor:
-            newRow = liststoreMatches.append()
-            if row[1] == None:
-                theDate = f'..-..-{2022}'
-            else:
-                theDate = f'{row[1][8:10]}-{row[1][5:7]}-{row[1][0:4]}'
-            isDateGuess = True if row[2] == 1 else False
-            if row[3] == None or row[3] == 0:
-                homeTeamName = '<None>'
-            else:
-                team = self.database.getTeam(row[3])
-                homeTeamName = team.toHtml(False, True)
-            if row[4] == None or row[4] == 0:
-                awayTeamName = '<None>'
-            else:
-                team = self.database.getTeam(row[4])
-                awayTeamName = team.toHtml(False, True, None)
-            liststoreMatches.set(newRow, 0, row[0], 1, 0, 2, theDate, 3, isDateGuess, 4, row[3], 5, homeTeamName, 6, row[4], 7, awayTeamName, 8, row[5], 9, row[6])
-        cursor.close()
-
-        # Close the database.
-        cndb.close()
-
-        # The database is up to date with the dialog contents.
-        self.isChanged = False
 
 
-
-    def editMatches(self, database, sql, seasonIndex):
+    def editSeason(self, database, season):
         '''
         Show the dialog and allow the user to edit the matches.
 
-        :param Database database: Specify the database to read and write matches.
-        :param int tournamentSeasonIndex: Specify the tournament season to edit.
+        :param Database database: Specify the database to read and write seasons.
+        :param Season season: Specify the season object to edit.
         '''
-
-        #liststoreSeasons = self.builder.get_object('liststoreSeasons')
-        #cboSeason = self.builder.get_object('cboSeason')
-        #cell = Gtk.CellRendererText()
-        #cboSeason.pack_start(cell, True)
-        #cboSeason.add_attribute(cell, 'text', 1)
-
-        # Add the seasons to the combobox liststoreSeasons.
-        #count = 0
-        #seasons = database.currentSport.getSeasons()
-        #for index, seasonIndex in enumerate(seasons):
-        #    season = database.getSeason(seasonIndex)
-        #    newRow = liststoreSeasons.append(None)
-        #    liststoreSeasons.set(newRow, 0, season.index, 1, season.name)
-        #    # print('{} {} {}'.format(index, season.index, season.name))
-        #    if seasonIndex == self.tournamentSeason.seasonIndex:
-        #        count = index
-        ## print('Set season to {}'.format(count))
-        #cboSeason.set_active(count)
 
         # Save the parameters, initialise the class.
         self.database = database
-        self.seasonIndex = seasonIndex
-        self.season = database.getSeason(seasonIndex)
+        self.season = season
 
-        # Populate the list of matches.
-        self.populateMatches(sql)
+        # Populate the dialog.
+        self.populateDialog()
 
         # Show the dialog and wait for a response.
         response = self.dialog.run()
