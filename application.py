@@ -68,7 +68,7 @@ class Application(walton.application.IApplication):
         self.configuration = Configuration()
 
         # The Database object for the table program.
-        self.database = Database(self.configuration.databaseFilename)
+        self.database = Database(self.configuration.databaseFilename, self)
 
         # The Render object for the application.
         # This is the object that renders the application results to html pages for display.

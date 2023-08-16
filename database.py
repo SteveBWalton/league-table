@@ -40,7 +40,7 @@ class Database(walton.database.IDatabase):
 
 
 
-    def __init__(self, databaseFilename):
+    def __init__(self, databaseFilename, application):
         '''
         :param string DatabaseFilename: Specify the filename of the sports database.
         :param string FlagDbFilename: Specify the filename of the countries database.
@@ -50,6 +50,8 @@ class Database(walton.database.IDatabase):
         '''
         # Call the constructor for the inherited classes.
         walton.database.IDatabase.__init__(self, databaseFilename)
+
+        self.application = application
 
         # Dictionary of Team objects.  This is the cache for the GetTeam() function.
         self.teams = {}

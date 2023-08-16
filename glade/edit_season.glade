@@ -2,6 +2,38 @@
 <!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
+  <object class="GtkAdjustment" id="adjustmentBadPos">
+    <property name="upper">100</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustmentDrawPoints">
+    <property name="upper">100</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustmentGoodPos">
+    <property name="upper">100</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustmentNumMatches">
+    <property name="upper">100</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustmentPositivePos">
+    <property name="upper">100</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjustmentWinPoints">
+    <property name="lower">1</property>
+    <property name="upper">100</property>
+    <property name="value">1</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
   <object class="GtkDialog" id="dialogEditSeason">
     <property name="height-request">600</property>
     <property name="can-focus">False</property>
@@ -133,7 +165,18 @@
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkEntry" id="entryStartDate">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="xalign">0.5</property>
+                        <property name="secondary-icon-name">x-office-calendar</property>
+                        <signal name="icon-release" handler="on_entryStartDate_icon_release" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
                     </child>
                     <child>
                       <object class="GtkLabel">
@@ -148,7 +191,18 @@
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkEntry" id="entryFinishDate">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="xalign">0.5</property>
+                        <property name="secondary-icon-name">x-office-calendar</property>
+                        <signal name="icon-release" handler="on_entryFinishDate_icon_release" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>
@@ -177,6 +231,8 @@
                       <object class="GtkSpinButton">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="xalign">0.5</property>
+                        <property name="adjustment">adjustmentWinPoints</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -200,6 +256,8 @@
                       <object class="GtkSpinButton">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="xalign">0.5</property>
+                        <property name="adjustment">adjustmentDrawPoints</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -267,6 +325,8 @@
                       <object class="GtkSpinButton">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="xalign">0.5</property>
+                        <property name="adjustment">adjustmentNumMatches</property>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
@@ -277,6 +337,8 @@
                       <object class="GtkSpinButton">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="xalign">0.5</property>
+                        <property name="adjustment">adjustmentGoodPos</property>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
@@ -287,6 +349,8 @@
                       <object class="GtkSpinButton">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="xalign">0.5</property>
+                        <property name="adjustment">adjustmentPositivePos</property>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
@@ -297,6 +361,8 @@
                       <object class="GtkSpinButton">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="xalign">0.5</property>
+                        <property name="adjustment">adjustmentBadPos</property>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>

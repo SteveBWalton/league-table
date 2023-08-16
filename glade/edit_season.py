@@ -21,6 +21,7 @@ import os
 from datetime import timedelta
 
 # Application libraries.
+import walton.glade.calendar
 #import glade.edit_team
 #import glade.edit_location
 #import glade.edit_season
@@ -62,7 +63,9 @@ class EditSeason:
         # Custom settings that don't work from glade.
 
         # Add the events to the dialog.
-        #signals = {
+        signals = {
+            'on_entryStartDate_icon_release'        : self._dateIcon,
+            'on_entryFinishDate_icon_release'       : self._dateIcon,
         #    'on_cmdAddRow_clicked'                  : self._addRow,
         #    'on_cmdDeleteRow_clicked'               : self._deleteRow,
         #
@@ -72,13 +75,22 @@ class EditSeason:
         #    'on_cellrenderertextScore_edited'       : self._homeScoreEdited,
         #    'on_cellrenderercomboTeam2_changed'     : self._awayTeamChanged,
         #    'on_cellrenderertextAwayScore_edited'   : self._awayScoreEdited,
-        #}
-        #self.builder.connect_signals(signals)
+        }
+        self.builder.connect_signals(signals)
 
         # Set the add link button as a drag-drop target.
         #buttonAddLink = self.builder.get_object('buttonAddLink')
         #buttonAddLink.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         #buttonAddLink.drag_dest_add_text_targets()
+
+
+
+    def _dateIcon(self, widget, _primarySecondary, _event):
+        '''
+        Signal handler for the icon click on a date text entry.
+        This is for both the date of birth and date of death text entry controls.
+        '''
+        walton.glade.calendar.showCalendarPopup(widget, self.dialog)
 
 
 
@@ -350,9 +362,41 @@ class EditSeason:
 
     def writeChanges(self):
         ''' Write the contents of the dialog to the database. '''
+        if self.database.application.debug:
+            print('EditSeason::writeChanges()')
         # Season Label.
         entrySeason = self.builder.get_object('entrySeason')
         self.season.name = entrySeason.get_text()
+
+        # Initialise the start and finish date controls.
+        entryStartDate = self.builder.get_object('entryStartDate')
+        theDate = entryStartDate.get_text()
+        if theDate == 'None':
+            self.season.startDate = None
+        else:
+            self.season.startDate = datetime.date(*time.strptime(theDate,"%d-%m-%Y")[:3])
+        entryFinishDate = self.builder.get_object('entryFinishDate')
+        theDate = entryFinishDate.get_text()
+        if theDate == 'None':
+            self.season.finishDate = None
+        else:
+            self.season.finishDate = datetime.date(*time.strptime(theDate,"%d-%m-%Y")[:3])
+
+        # Points.
+        adjustmentWinPoints = self.builder.get_object('adjustmentWinPoints')
+        self.season.winPts = int(adjustmentWinPoints.get_value())
+        adjustmentDrawPoints = self.builder.get_object('adjustmentDrawPoints')
+        self.season.drawPts = int(adjustmentDrawPoints.get_value())
+
+        # Num Matches.
+        adjustmentNumMatches = self.builder.get_object('adjustmentNumMatches')
+        self.season.numMatches = int(adjustmentNumMatches.get_value())
+        adjustmentGoodPos = self.builder.get_object('adjustmentGoodPos')
+        self.season.goodPos = int(adjustmentGoodPos.get_value())
+        adjustmentPositivePos = self.builder.get_object('adjustmentPositivePos')
+        self.season.positivePos = int(adjustmentPositivePos.get_value())
+        adjustmentBadPos = self.builder.get_object('adjustmentBadPos')
+        self.season.badPos = int(adjustmentBadPos.get_value())
 
         # Comments.
         textviewComments = self.builder.get_object("textviewComments")
@@ -361,10 +405,14 @@ class EditSeason:
         bufferEnd = commentsBuffer.get_end_iter()
         self.season.comments = commentsBuffer.get_text(bufferStart, bufferEnd, False)
 
+        # Write changes to database.
+        self.season.write()
 
 
     def populateDialog(self):
         ''' Populate the dialog with settings from the season object. '''
+        if self.database.application.debug:
+            print('EditSeason::populateDialog()')
 
         # Season Label.
         entrySeason = self.builder.get_object('entrySeason')
@@ -372,6 +420,34 @@ class EditSeason:
             entrySeason.set_text(self.season.name)
         except:
             pass
+
+        # Initialise the start and finish date controls.
+        entryStartDate = self.builder.get_object('entryStartDate')
+        if self.season.startDate is None:
+            entryStartDate.set_text('None')
+        else:
+            entryStartDate.set_text(f'{self.season.startDate.day:02}-{self.season.startDate.month:02}-{self.season.startDate.year:04}')
+        entryFinishDate = self.builder.get_object('entryFinishDate')
+        if self.season.finishDate is None:
+            entryFinishDate.set_text('None')
+        else:
+            entryFinishDate.set_text(f'{self.season.finishDate.day:02}-{self.season.finishDate.month:02}-{self.season.finishDate.year:04}')
+
+        # Points.
+        adjustmentWinPoints = self.builder.get_object('adjustmentWinPoints')
+        adjustmentWinPoints.set_value(3)
+        adjustmentDrawPoints = self.builder.get_object('adjustmentDrawPoints')
+        adjustmentDrawPoints.set_value(1)
+
+        # Num Matches.
+        adjustmentNumMatches = self.builder.get_object('adjustmentNumMatches')
+        adjustmentNumMatches.set_value(self.season.numMatches)
+        adjustmentGoodPos = self.builder.get_object('adjustmentGoodPos')
+        adjustmentGoodPos.set_value(self.season.goodPos)
+        adjustmentPositivePos = self.builder.get_object('adjustmentPositivePos')
+        adjustmentPositivePos.set_value(self.season.positivePos)
+        adjustmentBadPos = self.builder.get_object('adjustmentBadPos')
+        adjustmentBadPos.set_value(self.season.badPos)
 
         # Initialise the comments.
         if self.season.comments is not None:

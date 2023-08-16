@@ -119,7 +119,7 @@ class Season:
         cndb = sqlite3.connect(self.database.filename)
 
         # sql = 'SELECT Name, CountryID, DoB, DoD, FirstYear, LastYear, Comments, InternetURL FROM Teams WHERE ID = ?;'
-        sql = 'SELECT LABEL, START_DATE, FINISH_DATE, COMMENTS, NUM_MATCHES, GOOD_POS, BAD_POS FROM SEASONS WHERE ID = ?;'
+        sql = 'SELECT LABEL, START_DATE, FINISH_DATE, COMMENTS, NUM_MATCHES, GOOD_POS, BAD_POS, POSITIVE_POS FROM SEASONS WHERE ID = ?;'
         params = (seasonIndex, )
         cursor = cndb.execute(sql, params)
         row = cursor.fetchone()
@@ -135,14 +135,10 @@ class Season:
         self.startDate = datetime.date(*time.strptime(row[1], "%Y-%m-%d")[:3]) if row[1] is not None else None
         self.finishDate = datetime.date(*time.strptime(row[2], "%Y-%m-%d")[:3]) if row[2] is not None else None
         self.comments = row[3]
-        self.numMatches = row[4]
-        self.goodPos = row[5]
-        self.badPos = row[6]
-        # TODO: Read this from the database!
-        if self.goodPos == 2:
-            self.goodPos2 = 6
-        else:
-            self.goodPos2 = self.goodPos
+        self.numMatches = 0 if row[4] is None else int(row[4])
+        self.goodPos = 0 if row[5] is None else int(row[5])
+        self.badPos = 0 if row[6] is None else int(row[6])
+        self.positivePos = 0 if row[7] is None else int(row[7])
 
         # For debugging.
         if self.index == 1:
@@ -168,16 +164,18 @@ class Season:
 
     def write(self):
         ''' Write this season into the database. '''
+        if self.database.application.debug:
+            print('Season::write()')
         if self.index == -1:
             # Write a new record.
             sql = 'INSERT INTO SEASONS (Name, SportID, CountryID, FirstYear, LastYear, DoB, DoD, Comments, InternetURL) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);'
             params = (self.database.param(self.name, ''), self.database.currentSport.index, self.database.param(self.countryIndex, -1), self.firstYear, self.lastYear, self.dob, self.dod, self.database.param(self.comments, ''), self.database.param(self.internetUrl, ''))
         else:
             # Update an existing record.
-            sql = 'UPDATE SEASONS SET LABEL = ?, COMMENTS = ?, START_DATE = ?, FINISH_DATE = ? WHERE ID = ?;'
-            params = (self.database.param(self.name, ''), self.database.param(self.comments, ''), self.startDate, self.finishDate, self.index)
+            sql = 'UPDATE SEASONS SET LABEL = ?, COMMENTS = ?, START_DATE = ?, FINISH_DATE = ?, WIN_PTS = ?, DRAW_PTS = ?, NUM_MATCHES = ?, GOOD_POS = ?, BAD_POS = ?, POSITIVE_POS = ? WHERE ID = ?;'
+            params = (self.database.param(self.name, ''), self.database.param(self.comments, ''), self.startDate, self.finishDate, self.winPts, self.drawPts, self.numMatches, self.goodPos, self.badPos, self.positivePos, self.index)
 
-        if self.database.debug:
+        if self.database.application.debug:
             print(sql)
             print(params)
 
