@@ -290,7 +290,7 @@ class Render(walton.toolbar.IToolbar):
 
             if isBySeason:
                 season = self.database.getSeason(row[14])
-                self.html.add(f'<td colspan="2" style="text-align: right;">{season.name}</td>')
+                self.html.add(f'<td colspan="2" style="text-align: right;"><a href="app:home?season={season.index}">{season.name}</a></td>')
             else:
 
                 team = self.database.getTeam(row[0])
