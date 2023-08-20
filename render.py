@@ -637,10 +637,7 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('<fieldset><legend>Administration</legend>')
         self.html.addLine('<ul>')
-        self.html.addLine('<li><a href="app:switch_sports">Switch Sports</a></li>')
         self.html.addLine('<li><a href="app:preferences">Preferences</a></li>')
-        self.html.addLine('<li><a href="app:configure_sport">Configure Sport</a></li>')
-        self.html.addLine('<li><a href="app:country_db">Country Database</a></li>')
         self.html.addLine('</ul>')
         self.html.addLine('</fieldset>')
         self.html.addLine('</td></tr></table>')
