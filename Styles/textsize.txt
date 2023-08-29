@@ -14,3 +14,4 @@ legend { font-size: 7pt; }
 .label { font-size: [FONT-SIZE,+1]; }
 .location { font-size: 7pt; }
 .pts { font-size: [FONT-SIZE,+7]; }
+.goals { font-size: [FONT-SIZE,+10]; margin-top: 3px; margin-bottom: 3px; }

@@ -52,3 +52,4 @@ select.toolbar { position: relative; top: -7px; font-size: 7pt; }
 .location { }
 .minor { color: grey; font-size: 7pt; vertical-align: middle; }
 .pts { font-weight: bold; }
+.goals { font-weight: bold; }
