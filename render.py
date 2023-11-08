@@ -1510,7 +1510,7 @@ class Render(walton.toolbar.IToolbar):
 
         # print(sql)
 
-        self.displayTable(cndb, sql, False, False, False, None, 0, False)
+        self.displayTable(cndb, sql, None, False, False, False, None, 0, False)
         self.html.addLine('</fieldset>')
 
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;">')
