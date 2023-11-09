@@ -943,6 +943,10 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'<td class="goals">{row[5]}</td>')
             self.html.add(f'<td>{awayTeam.toHtml()}</td>')
             self.html.add(f'<td title="Head to Head"><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}&date={theDate}"><i class="fas fa-user"></i></a></td>')
+
+            # Don't really want this here.  It is confusing.
+            self.html.add(f'<td title="Season Comparison"><a href="app:head_season?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}&date={theDate}"><i class="fas fa-chart-line"></i></i></td>')
+
             self.html.addLine('</tr>')
 
         self.html.addLine('</table>')
