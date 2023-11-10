@@ -87,6 +87,8 @@ class Render(walton.toolbar.IToolbar):
             'table_subset'      : self.showTableSubset
         }
 
+        # Indentify the current last season.
+        self.lastSeasonIndex = 4
 
 
 
@@ -398,14 +400,17 @@ class Render(walton.toolbar.IToolbar):
             self.html.add('<option value="0">Free</option>')
         if dateType == -1:
             self.html.add('<option value="0" selected="yes">This Season</option>')
-            startDate = '2022-08-06'
+            lastSeason = self.database.getSeason(self.lastSeasonIndex)
+            startDate = lastSeason.startDate
             finishDate = datetime.date.today()
         else:
             self.html.add('<option value="-1">This Season</option>')
         if dateType == -2:
+            lastSeason = self.database.getSeason(self.lastSeasonIndex)
+            previousSeason = self.database.getSeason(lastSeason.getPreviousSeasonIndex())
             self.html.add('<option value="0" selected="yes">Last Season</option>')
-            startDate = '2021-08-14'
-            finishDate = '2022-05-22'
+            startDate = previousSeason.startDate
+            finishDate = previousSeason.finishDate
         else:
             self.html.add('<option value="-2">Last Season</option>')
         if dateType == -3:
@@ -459,11 +464,12 @@ class Render(walton.toolbar.IToolbar):
         # print('showHome()')
         # Decode the parameters.
         level = int(parameters['level']) if 'level' in parameters else 0
-        seasonIndex = int(parameters['season']) if 'season' in parameters else 4
+        seasonIndex = int(parameters['season']) if 'season' in parameters else self.lastSeasonIndex
         # if 'date' in parameters:
         #    print(parameters['date'])
         theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
         isRange = True
+        # print(f'seasonIndex = {seasonIndex}, date = {theDate}')
 
         # Check the the date is in season range.
         season = self.database.getSeason(seasonIndex)
@@ -942,10 +948,10 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'<td class="goals">{row[4]}</td>')
             self.html.add(f'<td class="goals">{row[5]}</td>')
             self.html.add(f'<td>{awayTeam.toHtml()}</td>')
-            self.html.add(f'<td title="Head to Head"><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}&date={theDate}"><i class="fas fa-user"></i></a></td>')
+            self.html.add(f'<td title="Head to Head"><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}&date={theMatchDate}"><i class="fas fa-user"></i></a></td>')
 
             # Don't really want this here.  It is confusing.
-            self.html.add(f'<td title="Season Comparison"><a href="app:head_season?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}&date={theDate}"><i class="fas fa-chart-line"></i></i></td>')
+            self.html.add(f'<td title="League Table"><a href="app:home?season={row[6]}&date={theMatchDate}"><i class="fas fa-chart-line"></i></i></td>')
 
             self.html.addLine('</tr>')
 
@@ -1476,7 +1482,8 @@ class Render(walton.toolbar.IToolbar):
         startDate, finishDate = self.displaySelectDates('table_subset', cndb, parameters)
         self.html.addLine('<br />')
         if startDate is None:
-            startDate = '2022-08-06'
+            lastSeason = self.db.getSeason(self.lastSeasonIndex)
+            startDate = lastSeason.startDate
         if finishDate is None:
             finishDate = datetime.date.today()
 
