@@ -665,7 +665,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<ul>')
         self.html.addLine('<li><a href="app:table_teams">All Time Table</a></li>')
         self.html.addLine('<li><a href="app:table_last">Table of last 5 Results</a></li>')
-        self.html.addLine('<li><a href="app:table_subset">Table of Subset of teams</a></li>')
+        self.html.addLine('<li><a href="app:table_subset">Table of Subset of Teams</a></li>')
         self.html.addLine('</ul>')
         self.html.addLine('</fieldset>')
 
@@ -1524,20 +1524,110 @@ class Render(walton.toolbar.IToolbar):
         self.displayTable(cndb, sql, None, False, False, False, None, 0, False)
         self.html.addLine('</fieldset>')
 
+        # Show the total points progress of the teams.
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;">')
-        self.html.addLine('<legend>Included</legend>')
+        self.html.addLine('<legend>Total Points</legend>')
+
+        # Identify the teams.
         sql = "SELECT ID, LABEL FROM TEAMS WHERE SUB_GROUP = 1 ORDER BY LABEL;"
+        includedTeams = []
         cursor = cndb.execute(sql)
         for row in cursor:
-            self.html.addLine(f'<p><a href="app:table_subset?start_date={startDate}&finish_date={finishDate}&exclude={row[0]}">{row[1]}</a></p>')
+            includedTeams.append([row[0], row[1]])
+
+        # Fetch their points.
+        maxMatches = 0
+        maxPoints = 0
+        for team in includedTeams:
+            sql = f"SELECT HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE (HOME_TEAM_ID = {team[0]} OR AWAY_TEAM_ID = {team[0]}) AND (THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}') ORDER BY THE_DATE;"
+            cursor = cndb.execute(sql)
+            listPts = []
+            totalPts = 0
+            for row in cursor:
+                if row[2] == row[3]:
+                    pts = 1
+                else:
+                    if row[0] == team[0]:
+                        if row[2] > row[3]:
+                            pts = 3
+                        else:
+                            pts = 0
+                    else:
+                        if row[2] > row[3]:
+                            pts = 0
+                        else:
+                            pts = 3
+                totalPts += pts
+                listPts.append(totalPts)
+            if len(listPts) > maxMatches:
+                maxMatches = len(listPts)
+            if totalPts > maxPoints:
+                maxPoints = totalPts
+            team.append(listPts)
+
+        # Draw a graph.
+        svgWidth = 500
+        svgHeight = 300
+        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+        # Graph Area.
+        top = 15
+        bottom = 30
+        left = 50
+        right = 10
+
+        width = svgWidth - left - right
+        height = svgHeight - top - bottom
+
+        self.html.addLine(f'<rect x="{left}" y="{top}" width="{width}" height="{height}" style="fill: white; stroke: black; stroke-width: 1;" />')
+
+        # X Axis.
+        xScale = width / maxMatches
+
+        # Y Axis.
+        yScale = height / maxPoints
+
+        # Draw the points.
+        lineColours = ['red', 'blue', 'green', 'orange', 'hotpink', 'gray', 'brown', 'brown']
+        teamCount = 0
+        for team in includedTeams:
+            x = left
+            self.html.add(f'<polyline points="{x},{top + height} ')
+            for pts in team[2]:
+                x += xScale
+                y = top + height - yScale * pts
+                self.html.add(f'{x},{y} ')
+            self.html.addLine(f'" style="fill: none; stroke: {lineColours[teamCount]}; stroke-width: 2;" />') # clip-path="url(#graph-area)"
+
+            # Label the lines.
+            y = top + 6 + 12 * teamCount
+            self.html.addLine(f'<line x1="{left}" y1="{y}" x2="{left + 10}" y2="{y}" stroke="{lineColours[teamCount]}" />')
+            self.html.addLine(f'<text text-anchor="start" font-size="8pt" x="{left + 12}" y="{y + 4}">{team[1]}</text>')
+
+            teamCount += 1
+
+        self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
 
+        self.html.addLine('<br/>')
+
+        # Show the included teams and allow them to be removed.
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;">')
+        self.html.addLine('<legend>Included</legend>')
+        for team in includedTeams:
+            self.html.addLine(f'<p><a href="app:table_subset?start_date={startDate}&finish_date={finishDate}&exclude={team[0]}">{team[1]}</a></p>')
+        self.html.addLine('</fieldset>')
+
+        # Show the excluded teams and allow them to be added.
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;">')
         self.html.addLine('<legend>Excluded</legend>')
+        self.html.add('<p>')
         sql = "SELECT ID, LABEL FROM TEAMS WHERE SUB_GROUP = 0 ORDER BY LABEL;"
+        sql = "SELECT ID, LABEL FROM TEAMS ORDER BY LABEL;"
         cursor = cndb.execute(sql)
         for row in cursor:
-            self.html.addLine(f'<p><a href="app:table_subset?start_date={startDate}&finish_date={finishDate}&&include={row[0]}">{row[1]}</a></p>')
+            self.html.add(f'<a href="app:table_subset?start_date={startDate}&finish_date={finishDate}&&include={row[0]}">{row[1]}</a>, ')
+        self.html.addLine('<p>')
         self.html.addLine('</fieldset>')
 
         # Close the database.
