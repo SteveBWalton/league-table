@@ -1455,26 +1455,15 @@ class Render(walton.toolbar.IToolbar):
 
     def showTableSubset(self, parameters):
         ''' Show a table of a subset of the teams. '''
-        #seasonIndex = int(parameters['season']) if 'season' in parameters else 1
-        #theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
-
-        #season = self.database.getSeason(seasonIndex)
-
-        #if season.getPreviousSeasonIndex() is None:
-        #    previousSeason = None
-        #else:
-        #    previousSeason = f'table_subset?season={season.getPreviousSeasonIndex()}'
-        #if season.getNextSeasonIndex() is None:
-        #    nextSeason = None
-        #else:
-        #    nextSeason = f'table_subset?season={season.getNextSeasonIndex()}'
-
         self.html.clear()
         self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, None, None, None, False, False, False)
         self.html.add(f'<p><span class="h1">Subset of Teams</span></p>')
 
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
+
+        # Group the date selector and table.
+        self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
 
         # Display a dates selector.
         if not 'date_type' in parameters:
@@ -1523,6 +1512,8 @@ class Render(walton.toolbar.IToolbar):
 
         self.displayTable(cndb, sql, None, False, False, False, None, 0, False)
         self.html.addLine('</fieldset>')
+
+        self.html.addLine('</div>')
 
         # Show the total points progress of the teams.
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;">')
