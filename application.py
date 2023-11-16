@@ -57,20 +57,15 @@ class Application(walton.application.IApplication):
         self.actions = {}
 
         self.showAge = False
-        # The active YearRange object for formula one database.
-        # self.yearRange = walton.year_range.YearRange()
 
-        # The active YearRange object for formula one database.
-        # self.yearRange = walton.year_range.YearRange()
-
-        # The Configuration object for the table program.
+        # The Configuration object for the league table program.
         # This is the application settings and options.
         self.configuration = Configuration()
 
-        # The Database object for the table program.
+        # The Database object for the league table program.
         self.database = Database(self.configuration.databaseFilename, self)
 
-        # The Render object for the application.
+        # The Render object for the league table program.
         # This is the object that renders the application results to html pages for display.
         self.render = Render(self)
 
@@ -104,60 +99,3 @@ class Application(walton.application.IApplication):
         self.render.html.stylesheets.append('file:' + sizeStyleSheet)
         self.render.html.stylesheets.append('file:' + fontStyleSheet)
         self.render.html.stylesheets.append('file:' + spaceStyleSheet)
-
-
-
-    #def openCurrentPage(self):
-    #    '''
-    #    Load the current page as specified by :py:attr:`self.request` and :py:attr:`self.parameters` attributes.
-    #    Add the options from the main window toolbar to the parameters and fetch the page from the render object.
-    #    This will call :py:func:`displayCurrentPage` if the content changes.
-    #    Display chain is :py:func:`followLocalLink` -> :py:func:`openCurrentPage` -> :py:func:`displayCurrentPage`.
-    #    '''
-    #    if self.database.debug:
-    #        print('openCurrentPage({}, {})'.format(self.request, self.parameters))
-    #
-    #    parameters = self.parameters
-    #
-    #    # Check for the age flag.
-    #    if self.showAge:
-    #        parameters += '&age=show'
-    #
-    #    # Check for a year range.
-    #    if not self.yearRange.allYears:
-    #        if 'firstyear' in parameters:
-    #            # Don't add a year again.  Maybe update the object?
-    #            self.yearRange.allYears = True
-    #        else:
-    #            parameters += '&firstyear={}&lastyear={}'.format(self.yearRange.firstYear, self.yearRange.lastYear)
-    #
-    #    if self.database.debug:
-    #        print("    Request '{}', Parameters '{}'".format(self.request, parameters))
-    #
-    #    # Build a dictionary from the parameters.
-    #    dictionary = self.decodeParameters(parameters)
-    #
-    #    # This is like a switch statement (that Python does not support)
-    #    isNewContent = True
-    #    if self.request in self.render.actions:
-    #        isNewContent = True
-    #        self.render.actions[self.request](dictionary)
-    #    elif self.request in self.actions:
-    #        isNewContent = self.actions[self.request](dictionary)
-    #    #else:
-    #    #    # Ask the render engine if it knows what to do.
-    #    #    isNewContent = False
-    #    #    if self.decodeLink != None:
-    #    #        isNewContent = self.decodeLink(self.request, parameters)
-    #
-    #    # Display the content created by the database.
-    #    if self.postRenderPage != None:
-    #        if isNewContent:
-    #            # self.DisplayCurrentPage()
-    #            self.postRenderPage()
-    #
-    #    # Return false so that idle_add does not call here again.
-    #    return False
-
-
-
