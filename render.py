@@ -1556,6 +1556,9 @@ class Render(walton.toolbar.IToolbar):
                 maxPoints = totalPts
             team.append(listPts)
 
+        # Sort teams into points order.
+        includedTeams.sort(key=sortTeamsByFinalPoints, reverse=True)
+
         # Draw a graph.
         svgWidth = 500
         svgHeight = 300
@@ -1623,3 +1626,13 @@ class Render(walton.toolbar.IToolbar):
 
         # Close the database.
         cndb.close()
+
+
+
+def sortTeamsByFinalPoints(team):
+    ''' Team sorting function for the graph in showTableSubset(). '''
+    points = team[2]
+    if len(points) == 0:
+        return 0
+    finalPoints = points[len(points)-1]
+    return finalPoints
