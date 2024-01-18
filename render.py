@@ -188,7 +188,64 @@ class Render(walton.toolbar.IToolbar):
 
 
 
-    def drawPossiblePointsBox(self, width, height, minimum, maximum, scaleMin, scaleMax, expectedPoints, safePoints, requiredPoints):
+    def drawPossiblePointsBox(self, width, height, scaleMin, scaleMax, actualPoints, gamesPlayed, remainingGames, safePoints, requiredPoints):
+        '''
+        Draws a svg graphical box to display the expected range of possible points.
+
+        :param int width: Specifies the width of the box.  Default to 200.
+        :param int height: Specifies the height of the box.  Default to 18.
+        :param int scaleMin: Specifies the miniumn number of points on the scale.
+        :param int scaleMax: Specifies the maximum number of points on the scale.
+        :param int actualPoints: Specifies the number of points that the team actually has.
+        :param real expectedPoints: Specifies the mean average expected points of the team.
+        :param int remainingGames: Specifies the number of matches remaining for the team.
+        :param real safePoints: Specifies the expected miniumn numbers of points to be safe.
+        :param real requirePoints: Specifies the expected miniumn number of points required.
+        '''
+
+        pointsPerGame = actualPoints / gamesPlayed
+
+        # Start a svg control.
+        self.html.add('<svg class="wdlbox" width="{}" height="{}" style="vertical-align: middle;">'.format(width, height))
+
+        # Draw the possible points in yellow.
+        pixMinimum = int(round(width * (actualPoints - scaleMin) / (scaleMax - scaleMin), 0))
+        pixMaximum = int(round(width * (actualPoints + 3 * remainingGames - scaleMin) / (scaleMax - scaleMin), 0))
+        self.html.add(f'<rect class="wdlbox_draw" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
+
+        # Draw the confidence interval points in green.
+        if remainingGames <= 2:
+            confidenceMinPoints = actualPoints
+            confidenceMaxPoints = actualPoints + remainingGames * 3
+        else:
+            lowerPointsPerGame = max(0, pointsPerGame - 0.3)
+            upperPointsPerGame = min(3, pointsPerGame + 0.3)
+            confidenceMinPoints = actualPoints + lowerPointsPerGame  * (remainingGames - 2)
+            confidenceMaxPoints = actualPoints + 6 + upperPointsPerGame * (remainingGames - 2)
+        pixMinimum = int(round(width * (confidenceMinPoints - scaleMin) / (scaleMax - scaleMin), 0))
+        pixMaximum = int(round(width * (confidenceMaxPoints - scaleMin) / (scaleMax - scaleMin), 0))
+        self.html.add(f'<rect class="wdlbox_win" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
+
+        # Border.
+        self.html.add('<rect class="wdlbox" width="{}" height="{}" style="fill: none; stroke-width: 2;" />'.format(width, height))
+        # Draw a tick mark at safe point points.
+        if safePoints > 0:
+            tickPos = int(round(width * (safePoints - scaleMin) / (scaleMax - scaleMin), 0))
+            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
+            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
+        # Draw a tick mark at required points.
+        if requiredPoints > 0:
+            tickPos = int(round(width * (requiredPoints - scaleMin) / (scaleMax - scaleMin), 0))
+            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
+            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
+        # Draw a line at expected points.
+        tickPos = int(round(width * ((gamesPlayed + remainingGames) * (actualPoints / gamesPlayed) - scaleMin) / (scaleMax - scaleMin), 0))
+        self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="{height}" style="stroke-width: 2;" />')
+        self.html.addLine('</svg>')
+
+
+
+    def drawPossiblePointsBox1(self, width, height, minimum, maximum, scaleMin, scaleMax, expectedPoints, safePoints, requiredPoints):
         ''' Draws a svg graphical box to display the specified wins, draws and losses ratio.
 
         :param int width: Specifies the width of the box.  Default to 200.
@@ -344,7 +401,13 @@ class Render(walton.toolbar.IToolbar):
                     self.html.add(f'<td title="Expected required points are {requiredPoints}.">')
                 else:
                     self.html.add('<td style="white-space: nowrap;">')
-                self.drawPossiblePointsBox(400, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, season.numMatches * row[11] / played, safePoints, requiredPoints)
+
+                # Debuging test the 2 box styles.
+                if False:
+                    self.drawPossiblePointsBox1(400, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, season.numMatches * row[11] / played, safePoints, requiredPoints)
+                else:
+                    self.drawPossiblePointsBox(400, 18, minPoints, maxPoints, teamMinPoints, played, (season.numMatches - played), safePoints, requiredPoints)
+
                 self.html.add('</td>')
 
                 # Show possible final ranking.
