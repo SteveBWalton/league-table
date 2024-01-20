@@ -218,8 +218,8 @@ class Render(walton.toolbar.IToolbar):
             confidenceMinPoints = actualPoints
             confidenceMaxPoints = actualPoints + remainingGames * 3
         else:
-            lowerPointsPerGame = max(0, pointsPerGame - 0.4)
-            upperPointsPerGame = min(3, pointsPerGame + 0.4)
+            lowerPointsPerGame = max(0, pointsPerGame - 0.5)
+            upperPointsPerGame = min(3, pointsPerGame + 0.5)
             confidenceMinPoints = actualPoints + lowerPointsPerGame  * (remainingGames - 2)
             confidenceMaxPoints = actualPoints + 6 + upperPointsPerGame * (remainingGames - 2)
         pixMinimum = int(round(width * (confidenceMinPoints - scaleMin) / (scaleMax - scaleMin), 0))
