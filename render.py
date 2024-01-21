@@ -214,14 +214,32 @@ class Render(walton.toolbar.IToolbar):
         self.html.add(f'<rect class="wdlbox_draw" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
 
         # Draw the confidence interval points in green.
-        if remainingGames <= 2:
-            confidenceMinPoints = actualPoints
-            confidenceMaxPoints = actualPoints + remainingGames * 3
+        if False:
+            # System One.
+            lowerPointsPerGame = pointsPerGame / 2
+            upperPointsPerGame = (3 + pointsPerGame) / 2
+            confidenceMinPoints = actualPoints + lowerPointsPerGame * remainingGames
+            confidenceMaxPoints = actualPoints + upperPointsPerGame * remainingGames
+        elif False:
+            # System Two
+            if remainingGames <= 2:
+                confidenceMinPoints = actualPoints
+                confidenceMaxPoints = actualPoints + remainingGames * 3
+            else:
+                lowerPointsPerGame = max(0, pointsPerGame - 0.5)
+                upperPointsPerGame = min(3, pointsPerGame + 0.5)
+                confidenceMinPoints = actualPoints + lowerPointsPerGame  * (remainingGames - 2)
+                confidenceMaxPoints = actualPoints + 6 + upperPointsPerGame * (remainingGames - 2)
         else:
-            lowerPointsPerGame = max(0, pointsPerGame - 0.5)
-            upperPointsPerGame = min(3, pointsPerGame + 0.5)
-            confidenceMinPoints = actualPoints + lowerPointsPerGame  * (remainingGames - 2)
-            confidenceMaxPoints = actualPoints + 6 + upperPointsPerGame * (remainingGames - 2)
+            # System Three.
+            if remainingGames <= 2:
+                confidenceMinPoints = actualPoints
+                confidenceMaxPoints = actualPoints + remainingGames * 3
+            else:
+                lowerPointsPerGame = pointsPerGame / 2
+                upperPointsPerGame = (3 + pointsPerGame) / 2
+                confidenceMinPoints = actualPoints + lowerPointsPerGame  * (remainingGames - 2)
+                confidenceMaxPoints = actualPoints + 6 + upperPointsPerGame * (remainingGames - 2)
         pixMinimum = int(round(width * (confidenceMinPoints - scaleMin) / (scaleMax - scaleMin), 0))
         pixMaximum = int(round(width * (confidenceMaxPoints - scaleMin) / (scaleMax - scaleMin), 0))
         self.html.add(f'<rect class="wdlbox_win" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
