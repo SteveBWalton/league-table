@@ -263,44 +263,6 @@ class Render(walton.toolbar.IToolbar):
 
 
 
-    def drawPossiblePointsBox1(self, width, height, minimum, maximum, scaleMin, scaleMax, expectedPoints, safePoints, requiredPoints):
-        ''' Draws a svg graphical box to display the specified wins, draws and losses ratio.
-
-        :param int width: Specifies the width of the box.  Default to 200.
-        :param int height: Specifies the height of the box.  Default to 18.
-        :param int numWins: Specifies the number of wins.
-        :param int numDraws: Specifies the number of draws.
-        :param int numLosses: Specifies the number of losses.
-        '''
-        self.html.add('<svg class="wdlbox" width="{}" height="{}" style="vertical-align: middle;">'.format(width, height))
-        pixMinimum = int(round(width * (minimum - scaleMin) / (scaleMax - scaleMin), 0))
-        pixMaximum = int(round(width * (maximum - scaleMin) / (scaleMax - scaleMin), 0))
-
-        self.html.add(f'<rect class="wdlbox_draw" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
-        tickPos = int(round(width * (expectedPoints - scaleMin) / (scaleMax - scaleMin), 0))
-        pixMinimum = ( pixMinimum + tickPos ) // 2
-        pixMaximum = ( pixMaximum + tickPos ) // 2
-        self.html.add(f'<rect class="wdlbox_win" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
-
-        # Border.
-        self.html.add('<rect class="wdlbox" width="{}" height="{}" style="fill: none; stroke-width: 2;" />'.format(width, height))
-        # Draw a tick mark at safe point points.
-        if safePoints > 0:
-            tickPos = int(round(width * (safePoints - scaleMin) / (scaleMax - scaleMin), 0))
-            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
-            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
-        # Draw a tick mark at required points.
-        if requiredPoints > 0:
-            tickPos = int(round(width * (requiredPoints - scaleMin) / (scaleMax - scaleMin), 0))
-            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
-            self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
-        # Draw a line at expected points.
-        tickPos = int(round(width * (expectedPoints - scaleMin) / (scaleMax - scaleMin), 0))
-        self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="{height}" style="stroke-width: 2;" />')
-        self.html.addLine('</svg>')
-
-
-
     def displayTable(self, cndb, sql, season, isCombinedHomeAway, isAddColour, isShowRange, theDate, lastResults, isBySeason):
         ''' Display a table on the html object. '''
         if isShowRange:
