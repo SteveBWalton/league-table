@@ -132,3 +132,39 @@ class Database(walton.database.IDatabase):
         # Close the database.
         cndb.close()
 
+
+    def getArrayTeamPts(self, teamIndex, startDate, finishDate):
+        ''' Return an array of the points scored by the specified team between the specified dates. '''
+        # Connect to the database.
+        cndb = sqlite3.connect(self.filename)
+
+        sql = f"SELECT HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND (THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}') ORDER BY THE_DATE;"
+        cursor = cndb.execute(sql)
+        listPts = []
+        totalPts = 0.0
+        for row in cursor:
+            if row[2] == row[3]:
+                # Draw.  Doesn't matter home or away or goal difference.
+                pts = 1
+            else:
+                if row[0] == teamIndex:
+                    # Home match.
+                    if row[2] > row[3]:
+                        pts = 3.0
+                    else:
+                        pts = 0.0
+                    pts += (row[2] - row[3]) / 1000
+                else:
+                    # Away match.
+                    if row[2] > row[3]:
+                        pts = 0.0
+                    else:
+                        pts = 3.0
+                    pts += (row[3] - row[2]) / 1000
+            totalPts += pts
+            listPts.append(totalPts)
+
+        # Close the database.
+        cndb.close()
+
+        return listPts

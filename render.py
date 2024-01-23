@@ -84,7 +84,8 @@ class Render(walton.toolbar.IToolbar):
             'head'              : self.showHeadToHead,
             'table_teams'       : self.showTableTeams,
             'table_last'        : self.showTableLast,
-            'table_subset'      : self.showTableSubset
+            'table_subset'      : self.showTableSubset,
+            'show_team_season'  : self.showTeamSeason
         }
 
         # Indentify the current last season.
@@ -263,7 +264,7 @@ class Render(walton.toolbar.IToolbar):
 
 
 
-    def displayTable(self, cndb, sql, season, isCombinedHomeAway, isAddColour, isShowRange, theDate, lastResults, isBySeason):
+    def displayTable(self, cndb, sql, season, isCombinedHomeAway, isAddColour, isShowRange, theDate, lastResults, isBySeason, extraInfo=0):
         ''' Display a table on the html object. '''
         if isShowRange:
             isShowPossiblePoints = False
@@ -329,7 +330,7 @@ class Render(walton.toolbar.IToolbar):
 
             if isBySeason:
                 season = self.database.getSeason(row[14])
-                self.html.add(f'<td colspan="2" style="text-align: right;"><a href="app:home?season={season.index}">{season.name}</a></td>')
+                self.html.add(f'<td colspan="2" style="text-align: right;"><a href="app:show_team_season?team={extraInfo}&season={season.index}">{season.name}</a></td>')
             else:
 
                 team = self.database.getTeam(row[0])
@@ -908,6 +909,29 @@ class Render(walton.toolbar.IToolbar):
 
 
 
+    def showTeamSeason(self, parameters):
+        '''
+        Render the specified team in the specified season on the html object.
+        '''
+        # Decode the parameters.
+        teamIndex = int(parameters['team']) if 'team' in parameters else 1
+        seasonIndex = int(parameters['season']) if 'season' in parameters else self.lastSeasonIndex
+
+        # Get the team object.
+        team = self.database.getTeam(teamIndex)
+
+        # Get the season object.
+        season = self.database.getSeason(seasonIndex)
+
+        # Initialise the display.
+        self.html.clear()
+        self.editTarget = ''
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, None, None, True, True, False, '')
+
+        self.html.add(f'<p><span class="h1">{team.name} in {season.name}</span></p>')
+
+
+
     def showTeam(self, parameters):
         '''
         Render the specified team on the html object.
@@ -1067,7 +1091,7 @@ class Render(walton.toolbar.IToolbar):
         # sql += "ORDER BY HOME_RESULTS.SEASON_ID DESC;"
         sql += "ORDER BY HOME_RESULTS.MAX_DATE DESC;"
 
-        self.displayTable(cndb, sql, None, False, False, False, None, 0, True)
+        self.displayTable(cndb, sql, None, False, False, False, None, 0, True, teamIndex)
         self.html.addLine('</fieldset>')
         self.html.addLine('<br />')
 
@@ -1573,6 +1597,9 @@ class Render(walton.toolbar.IToolbar):
         maxMatches = 0
         maxPoints = 0
         for team in includedTeams:
+
+
+            '''
             sql = f"SELECT HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE (HOME_TEAM_ID = {team[0]} OR AWAY_TEAM_ID = {team[0]}) AND (THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}') ORDER BY THE_DATE;"
             cursor = cndb.execute(sql)
             listPts = []
@@ -1593,11 +1620,16 @@ class Render(walton.toolbar.IToolbar):
                             pts = 3
                 totalPts += pts
                 listPts.append(totalPts)
-            if len(listPts) > maxMatches:
-                maxMatches = len(listPts)
-            if totalPts > maxPoints:
-                maxPoints = totalPts
+            '''
+            listPts = self.database.getArrayTeamPts(team[0], startDate, finishDate)
             team.append(listPts)
+
+            if len(listPts) > 0:
+                if len(listPts) > maxMatches:
+                    maxMatches = len(listPts)
+                finalPoints = listPts[len(listPts) - 1]
+                if finalPoints > maxPoints:
+                    maxPoints = finalPoints
 
         # Sort teams into points order.
         includedTeams.sort(key=sortTeamsByFinalPoints, reverse=True)
