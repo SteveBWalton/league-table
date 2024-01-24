@@ -930,6 +930,58 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.add(f'<p><span class="h1">{team.name} in {season.name}</span></p>')
 
+        # Connect to the database.
+        cndb = sqlite3.connect(self.database.filename)
+
+        # Show the matches.
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Matches</legend>')
+        self.html.addLine('<table>')
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE >= ? AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
+        params = (teamIndex, teamIndex, season.startDate, season.finishDate)
+        cursor = cndb.execute(sql, params)
+        for row in cursor:
+            theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
+            isDateGuess = row[1] == 1
+            if isDateGuess:
+                formatMatchDate = f'({row[0]})'
+            else:
+                formatMatchDate = self.database.formatDate(theMatchDate)
+            homeTeam = self.database.getTeam(row[2])
+            awayTeam = self.database.getTeam(row[3])
+            if teamIndex == homeTeam.index:
+                if row[4] > row[5]:
+                    className = 'win2'
+                elif row[4] < row[5]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+            else:
+                if row[4] < row[5]:
+                    className = 'win2'
+                elif row[4] > row[5]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+
+            self.html.add(f'<tr class="{className}">')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:show_team?id={teamIndex}&date={row[0]}">{formatMatchDate}</a></td>')
+            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+            self.html.add(f'<td class="goals">{row[4]}</td>')
+            self.html.add(f'<td class="goals">{row[5]}</td>')
+            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+            self.html.add(f'<td title="Head to Head"><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}&date={theMatchDate}"><i class="fas fa-user"></i></a></td>')
+
+            # Don't really want this here.  It is confusing.
+            self.html.add(f'<td title="League Table"><a href="app:home?season={row[6]}&date={theMatchDate}"><i class="fas fa-chart-line"></i></i></td>')
+
+            self.html.addLine('</tr>')
+
+        self.html.addLine('</table>')
+        self.html.addLine('</fieldset>')
+
+        # Close the database.
+        cndb.close()
+
 
 
     def showTeam(self, parameters):
