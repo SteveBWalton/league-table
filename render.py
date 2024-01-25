@@ -1797,6 +1797,76 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
 
+        # Get the points for the other teams in the league.
+        listTeams = self.database.getListTeams(season.startDate, season.finishDate)
+
+        otherTeams = []
+        for otherTeamIndex in listTeams:
+            if otherTeamIndex != teamIndex:
+                otherTeamListPts = self.database.getArrayTeamPts(otherTeamIndex, season.startDate, season.finishDate)
+                otherTeams.append([otherTeamIndex, otherTeamListPts])
+
+        numMatches = len(listPts)
+        numPositions = len(listTeams)
+
+        # Draw a graph of league position.
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>League Position</legend>')
+
+        # Draw a graph.
+        boxWidth = 12
+        boxHeight = 12
+        svgWidth = season.numMatches * boxWidth
+        svgHeight = numPositions * boxHeight
+        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+        width = svgWidth
+        height = svgHeight
+        # self.html.addLine(f'<rect x="{0}" y="{0}" width="{width}" height="{height}" style="fill: white; stroke: black; stroke-width: 1;" />')
+
+        for matchIndex in range(numMatches):
+            # Count the better positions.
+            count = 1
+            for otherTeam in otherTeams:
+                otherTeamListPts = otherTeam[1]
+                if len(otherTeamListPts) > matchIndex:
+                    otherTeamMatchIndex = matchIndex
+                else:
+                    otherTeamMatchIndex = len(otherTeamListPts) - 1
+                if otherTeamListPts[otherTeamMatchIndex] > listPts[matchIndex]:
+                    count += 1
+                    #otherTeam = self.database.getTeam(otherTeam[0])
+                    #print(f'{otherTeam.name} {otherTeamListPts[matchIndex]} > {listPts[matchIndex]}')
+                elif otherTeamListPts[otherTeamMatchIndex] == listPts[matchIndex]:
+                    count += 0.5
+                    #otherTeam = self.database.getTeam(otherTeam[0])
+                    #print(f'{otherTeam.name} {otherTeamListPts[matchIndex]} == {listPts[matchIndex]}')
+            print (f'matchIndex = {matchIndex}, count = {count}')
+            # Draw the box.
+            x = matchIndex * boxWidth
+            # y = math.floor(count - 1) * boxHeight
+            for boxIndex in range(math.floor(count - 1), numPositions):
+                y = boxIndex * boxHeight
+                colour = 'yellow'
+                if season.goodPos is not None and  boxIndex < season.goodPos:
+                    colour = 'green'
+                elif season.positivePos is not None and boxIndex < season.positivePos:
+                    colour = '#CCFFCC;'
+                elif season.badPos is not None and  boxIndex >= season.badPos:
+                    colour = 'red'
+                self.html.addLine(f'<rect x="{x}" y="{y}" width="{boxWidth}" height="{boxHeight}" style="fill: {colour};" />')
+
+        # Draw a grid.
+        for i in range(season.numMatches + 1):
+            x = i * boxWidth
+            self.html.addLine(f'<line x1="{x}" y1="{0}" x2="{x}" y2="{height}" style="stroke: black; stroke-width: 1;" />')
+
+        for i in range(numPositions + 1):
+            y = i * boxHeight
+            self.html.addLine(f'<line x1="{0}" y1="{y}" x2="{width}" y2="{y}" style="stroke: black; stroke-width: 1;" />')
+
+        self.html.addLine('</svg>')
+        self.html.addLine('</fieldset')
+
         # Close the database.
         cndb.close()
 

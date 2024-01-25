@@ -64,7 +64,7 @@ class Season:
         # A bad finish position.
         self.badPos = None
         # A not quite as good finish position.
-        self.goodPos2 = None
+        self.positivePos = None
 
 
 

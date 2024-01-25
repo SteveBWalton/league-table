@@ -133,6 +133,24 @@ class Database(walton.database.IDatabase):
         cndb.close()
 
 
+
+    def getListTeams(self, startDate, finishDate):
+        '''
+        Return an array of teams which played matches between the specified dates.
+        This only works once all the teams have played a home match.
+        '''
+        cndb = sqlite3.connect(self.filename)
+
+        sql = f"SELECT HOME_TEAM_ID FROM MATCHES WHERE THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}' GROUP BY HOME_TEAM_ID;"
+        cursor = cndb.execute(sql)
+        listTeams = []
+        for row in cursor:
+            listTeams.append(row[0])
+
+        return listTeams
+
+
+
     def getArrayTeamPts(self, teamIndex, startDate, finishDate):
         ''' Return an array of the points scored by the specified team between the specified dates. '''
         # Connect to the database.
