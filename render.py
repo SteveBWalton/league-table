@@ -909,81 +909,6 @@ class Render(walton.toolbar.IToolbar):
 
 
 
-    def showTeamSeason(self, parameters):
-        '''
-        Render the specified team in the specified season on the html object.
-        '''
-        # Decode the parameters.
-        teamIndex = int(parameters['team']) if 'team' in parameters else 1
-        seasonIndex = int(parameters['season']) if 'season' in parameters else self.lastSeasonIndex
-
-        # Get the team object.
-        team = self.database.getTeam(teamIndex)
-
-        # Get the season object.
-        season = self.database.getSeason(seasonIndex)
-
-        # Initialise the display.
-        self.html.clear()
-        self.editTarget = ''
-        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, None, None, True, True, False, '')
-
-        self.html.add(f'<p><span class="h1">{team.name} in {season.name}</span></p>')
-
-        # Connect to the database.
-        cndb = sqlite3.connect(self.database.filename)
-
-        # Show the matches.
-        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Matches</legend>')
-        self.html.addLine('<table>')
-        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE >= ? AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
-        params = (teamIndex, teamIndex, season.startDate, season.finishDate)
-        cursor = cndb.execute(sql, params)
-        for row in cursor:
-            theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
-            isDateGuess = row[1] == 1
-            if isDateGuess:
-                formatMatchDate = f'({row[0]})'
-            else:
-                formatMatchDate = self.database.formatDate(theMatchDate)
-            homeTeam = self.database.getTeam(row[2])
-            awayTeam = self.database.getTeam(row[3])
-            if teamIndex == homeTeam.index:
-                if row[4] > row[5]:
-                    className = 'win2'
-                elif row[4] < row[5]:
-                    className = 'lost2'
-                else:
-                    className = 'draw2'
-            else:
-                if row[4] < row[5]:
-                    className = 'win2'
-                elif row[4] > row[5]:
-                    className = 'lost2'
-                else:
-                    className = 'draw2'
-
-            self.html.add(f'<tr class="{className}">')
-            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:show_team?id={teamIndex}&date={row[0]}">{formatMatchDate}</a></td>')
-            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
-            self.html.add(f'<td class="goals">{row[4]}</td>')
-            self.html.add(f'<td class="goals">{row[5]}</td>')
-            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
-            self.html.add(f'<td title="Head to Head"><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}&date={theMatchDate}"><i class="fas fa-user"></i></a></td>')
-
-            # Don't really want this here.  It is confusing.
-            self.html.add(f'<td title="League Table"><a href="app:home?season={row[6]}&date={theMatchDate}"><i class="fas fa-chart-line"></i></i></td>')
-
-            self.html.addLine('</tr>')
-
-        self.html.addLine('</table>')
-        self.html.addLine('</fieldset>')
-
-        # Close the database.
-        cndb.close()
-
-
-
     def showTeam(self, parameters):
         '''
         Render the specified team on the html object.
@@ -1749,6 +1674,127 @@ class Render(walton.toolbar.IToolbar):
         for row in cursor:
             self.html.add(f'<a href="app:table_subset?start_date={startDate}&finish_date={finishDate}&&include={row[0]}">{row[1]}</a>, ')
         self.html.addLine('<p>')
+        self.html.addLine('</fieldset>')
+
+        # Close the database.
+        cndb.close()
+
+
+
+    def showTeamSeason(self, parameters):
+        '''
+        Render the specified team in the specified season on the html object.
+        '''
+        # Decode the parameters.
+        teamIndex = int(parameters['team']) if 'team' in parameters else 1
+        seasonIndex = int(parameters['season']) if 'season' in parameters else self.lastSeasonIndex
+
+        # Get the team object.
+        team = self.database.getTeam(teamIndex)
+
+        # Get the season object.
+        season = self.database.getSeason(seasonIndex)
+
+        # Initialise the display.
+        self.html.clear()
+        self.editTarget = ''
+        self.displayToolbar(Render.TOOLBAR_INITIAL_SHOW, self.editTarget, None, None, True, True, False, '')
+
+        self.html.add(f'<p><span class="h1">{team.name} in {season.name}</span></p>')
+
+        # Connect to the database.
+        cndb = sqlite3.connect(self.database.filename)
+
+        # Show the matches.
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Matches</legend>')
+        self.html.addLine('<table>')
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE >= ? AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
+        params = (teamIndex, teamIndex, season.startDate, season.finishDate)
+        cursor = cndb.execute(sql, params)
+        for row in cursor:
+            theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
+            isDateGuess = row[1] == 1
+            if isDateGuess:
+                formatMatchDate = f'({row[0]})'
+            else:
+                formatMatchDate = self.database.formatDate(theMatchDate)
+            homeTeam = self.database.getTeam(row[2])
+            awayTeam = self.database.getTeam(row[3])
+            if teamIndex == homeTeam.index:
+                if row[4] > row[5]:
+                    className = 'win2'
+                elif row[4] < row[5]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+            else:
+                if row[4] < row[5]:
+                    className = 'win2'
+                elif row[4] > row[5]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+
+            self.html.add(f'<tr class="{className}">')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:show_team?id={teamIndex}&date={row[0]}">{formatMatchDate}</a></td>')
+            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+            self.html.add(f'<td class="goals">{row[4]}</td>')
+            self.html.add(f'<td class="goals">{row[5]}</td>')
+            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+            self.html.add(f'<td title="Head to Head"><a href="app:head?team1={teamIndex}&team2={homeTeam.index if homeTeam.index != teamIndex else awayTeam.index}&date={theMatchDate}"><i class="fas fa-user"></i></a></td>')
+
+            # Don't really want this here.  It is confusing.
+            self.html.add(f'<td title="League Table"><a href="app:home?season={row[6]}&date={theMatchDate}"><i class="fas fa-chart-line"></i></i></td>')
+
+            self.html.addLine('</tr>')
+
+        self.html.addLine('</table>')
+        self.html.addLine('</fieldset>')
+
+        # Get the list of points for this team.
+        listPts = self.database.getArrayTeamPts(teamIndex, season.startDate, season.finishDate)
+
+        maxMatches = 1
+        maxPoints = 3
+        if len(listPts) > 0:
+            if len(listPts) > maxMatches:
+                maxMatches = len(listPts)
+            finalPoints = listPts[len(listPts) - 1]
+            if finalPoints > maxPoints:
+                maxPoints = finalPoints
+
+        # Draw a graph.
+        svgWidth = 500
+        svgHeight = 300
+        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+        # Graph Area.
+        top = 15
+        bottom = 30
+        left = 50
+        right = 10
+
+        width = svgWidth - left - right
+        height = svgHeight - top - bottom
+
+        self.html.addLine(f'<rect x="{left}" y="{top}" width="{width}" height="{height}" style="fill: white; stroke: black; stroke-width: 1;" />')
+
+        # X Axis.
+        xScale = width / maxMatches
+
+        # Y Axis.
+        yScale = height / maxPoints
+
+        # Draw the points.
+        x = left
+        self.html.add(f'<polyline points="{x},{top + height} ')
+        for pts in listPts:
+            x += xScale
+            y = top + height - yScale * pts
+            self.html.add(f'{x},{y} ')
+        self.html.addLine(f'" style="fill: none; stroke: red; stroke-width: 2;" />') # clip-path="url(#graph-area)"
+
+        self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
 
         # Close the database.
