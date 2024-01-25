@@ -1702,6 +1702,12 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.add(f'<p><span class="h1">{team.name} in {season.name}</span></p>')
 
+        # Decide the finish date.
+        if datetime.date.today() < season.finishDate:
+            finishDate = datetime.date.today()
+        else:
+            finishDate = season.finishDate
+
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
 
@@ -1709,7 +1715,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Matches</legend>')
         self.html.addLine('<table>')
         sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE >= ? AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
-        params = (teamIndex, teamIndex, season.startDate, season.finishDate)
+        params = (teamIndex, teamIndex, season.startDate, finishDate)
         cursor = cndb.execute(sql, params)
         for row in cursor:
             theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
@@ -1752,53 +1758,10 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
 
         # Get the list of points for this team.
-        listPts = self.database.getArrayTeamPts(teamIndex, season.startDate, season.finishDate)
-
-        maxMatches = 1
-        maxPoints = 3
-        if len(listPts) > 0:
-            if len(listPts) > maxMatches:
-                maxMatches = len(listPts)
-            finalPoints = listPts[len(listPts) - 1]
-            if finalPoints > maxPoints:
-                maxPoints = finalPoints
-
-        # Draw a graph.
-        svgWidth = 500
-        svgHeight = 300
-        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
-
-        # Graph Area.
-        top = 15
-        bottom = 30
-        left = 50
-        right = 10
-
-        width = svgWidth - left - right
-        height = svgHeight - top - bottom
-
-        self.html.addLine(f'<rect x="{left}" y="{top}" width="{width}" height="{height}" style="fill: white; stroke: black; stroke-width: 1;" />')
-
-        # X Axis.
-        xScale = width / maxMatches
-
-        # Y Axis.
-        yScale = height / maxPoints
-
-        # Draw the points.
-        x = left
-        self.html.add(f'<polyline points="{x},{top + height} ')
-        for pts in listPts:
-            x += xScale
-            y = top + height - yScale * pts
-            self.html.add(f'{x},{y} ')
-        self.html.addLine(f'" style="fill: none; stroke: red; stroke-width: 2;" />') # clip-path="url(#graph-area)"
-
-        self.html.addLine('</svg>')
-        self.html.addLine('</fieldset>')
+        listPts = self.database.getArrayTeamPts(teamIndex, season.startDate, finishDate)
 
         # Get the points for the other teams in the league.
-        listTeams = self.database.getListTeams(season.startDate, season.finishDate)
+        listTeams = self.database.getListTeams(season.startDate, finishDate)
 
         otherTeams = []
         for otherTeamIndex in listTeams:
@@ -1809,12 +1772,15 @@ class Render(walton.toolbar.IToolbar):
         numMatches = len(listPts)
         numPositions = len(listTeams)
 
+        # Keep league position and match results in line.
+        self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
+
         # Draw a graph of league position.
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>League Position</legend>')
 
         # Draw a graph.
-        boxWidth = 12
-        boxHeight = 12
+        boxWidth = 14
+        boxHeight = 14
         svgWidth = season.numMatches * boxWidth
         svgHeight = numPositions * boxHeight
         self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
@@ -1840,7 +1806,7 @@ class Render(walton.toolbar.IToolbar):
                     count += 0.5
                     #otherTeam = self.database.getTeam(otherTeam[0])
                     #print(f'{otherTeam.name} {otherTeamListPts[matchIndex]} == {listPts[matchIndex]}')
-            print (f'matchIndex = {matchIndex}, count = {count}')
+            # print (f'matchIndex = {matchIndex}, count = {count}')
             # Draw the box.
             x = matchIndex * boxWidth
             # y = math.floor(count - 1) * boxHeight
@@ -1865,7 +1831,109 @@ class Render(walton.toolbar.IToolbar):
             self.html.addLine(f'<line x1="{0}" y1="{y}" x2="{width}" y2="{y}" style="stroke: black; stroke-width: 1;" />')
 
         self.html.addLine('</svg>')
-        self.html.addLine('</fieldset')
+        self.html.addLine('</fieldset>')
+        self.html.addLine('<br />')
+
+        # Draw a graph of match Results.
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Match Results</legend>')
+
+        svgWidth = season.numMatches * boxWidth
+        svgHeight = boxHeight
+        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+        y = 0
+        previousPts = 0
+        for boxIndex in range(len(listPts)):
+            x = boxIndex * boxWidth
+            colour = 'yellow'
+            if listPts[boxIndex] > previousPts + 1.1:
+                colour = 'green'
+            elif listPts[boxIndex] < previousPts + 0.9:
+                colour = 'red'
+            self.html.addLine(f'<rect x="{x}" y="{y}" width="{boxWidth}" height="{boxHeight}" style="fill: {colour};" />')
+            previousPts = listPts[boxIndex]
+
+        # Draw a grid.
+        for i in range(season.numMatches + 1):
+            x = i * boxWidth
+            self.html.addLine(f'<line x1="{x}" y1="{0}" x2="{x}" y2="{height}" style="stroke: black; stroke-width: 1;" />')
+        # self.html.addLine(f'<rect x1="{0}" y1="{0}" width="{width}" height="{height}" style="stroke: black; stroke-width: 1;" />')
+
+        self.html.addLine('</svg>')
+        self.html.addLine('</fieldset>')
+        self.html.addLine('</div>')
+
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Points</legend>')
+        maxMatches = 1
+        maxPoints = 3
+        if len(listPts) > 0:
+            if len(listPts) > maxMatches:
+                maxMatches = len(listPts)
+            finalPoints = listPts[len(listPts) - 1]
+            if finalPoints > maxPoints:
+                maxPoints = finalPoints
+
+        # Draw a graph.
+        svgWidth = 500
+        svgHeight = 300
+        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+        # Graph Area.
+        top = 10
+        bottom = 10
+        left = 10
+        right = 10
+
+        width = svgWidth - left - right
+        height = svgHeight - top - bottom
+
+        self.html.addLine(f'<rect x="{left}" y="{top}" width="{width}" height="{height}" style="fill: white; stroke: black; stroke-width: 1;" />')
+
+        # X Axis.
+        xScale = width / maxMatches
+
+        # Y Axis.
+        yScale = height / maxPoints
+
+        # Draw a Y axis scale.
+        for i in range(math.floor(maxPoints/15)):
+            pts = (i + 1) * 15
+            if pts < maxPoints:
+                y = top + height - yScale * pts
+                self.html.addLine(f'<line x1="{left}" y1="{y}" x2="{left + width}" y2="{y}" style="stroke: grey; stroke-width: 1;" />')
+
+        # Draw a X axis scale. ???
+        # print(f'maxMatches = {maxMatches}')
+        for i in range(math.floor(maxMatches/5)):
+            match = (i + 1) * 5
+            # print(f'match = {match}')
+            if pts < maxPoints:
+                x = left + xScale * match
+                self.html.addLine(f'<line x1="{x}" y1="{top}" x2="{x}" y2="{top + height}" style="stroke: grey; stroke-width: 1;" />')
+
+        # Draw the points.
+        x = left
+        self.html.add(f'<polyline points="{x},{top + height} ')
+        for pts in listPts:
+            x += xScale
+            y = top + height - yScale * pts
+            self.html.add(f'{x},{y} ')
+        self.html.addLine(f'" style="fill: none; stroke: red; stroke-width: 2;" />') # clip-path="url(#graph-area)"
+
+        # Draw the 5 game moving average.
+        if len(listPts) >= 5:
+            x = left + 5 * xScale
+            y = top + height - yScale * listPts[4]
+            self.html.add(f'<polyline points="{x},{y} ')
+            for index in range(5, len(listPts)):
+                movingAveragePts = listPts[index] - listPts[index-5]
+                x += xScale
+                y = top + height - yScale * movingAveragePts
+                self.html.add(f'{x},{y} ')
+            self.html.addLine(f'" style="fill: none; stroke: green; stroke-width: 2;" />') # clip-path="url(#graph-area)"
+
+        self.html.addLine('</svg>')
+        self.html.addLine('</fieldset>')
 
         # Close the database.
         cndb.close()
