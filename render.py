@@ -952,6 +952,24 @@ class Render(walton.toolbar.IToolbar):
         else:
             theDate = finishDate
 
+        self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
+
+        # Show a season summary.
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Seasons</legend>')
+        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR, HOME_RESULTS.SEASON_ID, HOME_RESULTS.MAX_DATE FROM "
+        sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST, SEASON_ID, MAX(THE_DATE) AS MAX_DATE FROM MATCHES "
+        sql += f"WHERE HOME_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS HOME_RESULTS "
+        sql += "INNER JOIN "
+        sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST, SEASON_ID, MAX(THE_DATE) AS MAX_DATE FROM MATCHES "
+        sql += f"WHERE AWAY_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS AWAY_RESULTS "
+        sql += "ON HOME_RESULTS.SEASON_ID = AWAY_RESULTS.SEASON_ID "
+        # sql += "ORDER BY HOME_RESULTS.SEASON_ID DESC;"
+        sql += "ORDER BY HOME_RESULTS.MAX_DATE DESC;"
+
+        self.displayTable(cndb, sql, None, False, False, False, None, 0, True, teamIndex)
+        self.html.addLine('</fieldset>')
+        self.html.addLine('<br />')
+
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Matches</legend>')
         self.html.addLine('<table>')
         sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE >= ? AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
@@ -1003,6 +1021,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
 
         # Start a second column.
+        self.html.addLine('</div>')
         self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
 
         # Show a future matches.
@@ -1055,22 +1074,6 @@ class Render(walton.toolbar.IToolbar):
             self.html.addLine('</table>')
             self.html.addLine('</fieldset>')
             self.html.addLine('<br />')
-
-        # Show a season summary.
-        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Season Summary</legend>')
-        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR, HOME_RESULTS.SEASON_ID, HOME_RESULTS.MAX_DATE FROM "
-        sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST, SEASON_ID, MAX(THE_DATE) AS MAX_DATE FROM MATCHES "
-        sql += f"WHERE HOME_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS HOME_RESULTS "
-        sql += "INNER JOIN "
-        sql += "(SELECT AWAY_TEAM_ID, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS AWAY_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS AWAY_DRAWS, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS AWAY_LOSES, SUM(AWAY_TEAM_FOR) AS AWAY_FOR, SUM(HOME_TEAM_FOR) AS AWAY_AGAINST, SEASON_ID, MAX(THE_DATE) AS MAX_DATE FROM MATCHES "
-        sql += f"WHERE AWAY_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS AWAY_RESULTS "
-        sql += "ON HOME_RESULTS.SEASON_ID = AWAY_RESULTS.SEASON_ID "
-        # sql += "ORDER BY HOME_RESULTS.SEASON_ID DESC;"
-        sql += "ORDER BY HOME_RESULTS.MAX_DATE DESC;"
-
-        self.displayTable(cndb, sql, None, False, False, False, None, 0, True, teamIndex)
-        self.html.addLine('</fieldset>')
-        self.html.addLine('<br />')
 
         # summaryType = 2
         for summaryType in range(2):
