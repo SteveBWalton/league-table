@@ -1938,6 +1938,14 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
 
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Compared To</legend>')
+        self.html.add('<select name="opponent">')
+        for otherTeamIndex in otherTeams:
+            otherTeam = self.database.getTeam(otherTeamIndex[0])
+            self.html.add(f'<option value="{otherTeamIndex}">{otherTeam.name}</option>')
+        self.html.add('</select>')
+        self.html.addLine('</fieldset>')
+
         # Close the database.
         cndb.close()
 
