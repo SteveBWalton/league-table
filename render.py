@@ -1691,6 +1691,7 @@ class Render(walton.toolbar.IToolbar):
         # Decode the parameters.
         teamIndex = int(parameters['team']) if 'team' in parameters else 1
         seasonIndex = int(parameters['season']) if 'season' in parameters else self.lastSeasonIndex
+        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else 0
 
         # Get the team object.
         team = self.database.getTeam(teamIndex)
@@ -1939,11 +1940,20 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
 
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Compared To</legend>')
-        self.html.add('<select name="opponent">')
+        self.html.addLine('<form action="app:show_team_season" method="get">')
+        self.html.addLine(f'<input type="hidden" name="team" value="{teamIndex}" />')
+        self.html.addLine(f'<input type="hidden" name="season" value="{seasonIndex}" />')
+        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else 0
+
+        self.html.add('<select name="opponent" onchange="this.form.submit();">')
         for otherTeamIndex in otherTeams:
             otherTeam = self.database.getTeam(otherTeamIndex[0])
-            self.html.add(f'<option value="{otherTeamIndex}">{otherTeam.name}</option>')
-        self.html.add('</select>')
+            self.html.add(f'<option value="{otherTeam.index}"')
+            if otherTeam.index == opponentIndex:
+                self.html.add(' selected="yes"')
+            self.html.add(f'>{otherTeam.name}</option>')
+        self.html.addLine('</select>')
+        self.html.addLine('</form>')
         self.html.addLine('</fieldset>')
 
         # Close the database.
