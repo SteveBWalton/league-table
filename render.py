@@ -1770,7 +1770,7 @@ class Render(walton.toolbar.IToolbar):
         otherTeams = []
         for otherTeamIndex in listTeams:
             if otherTeamIndex != teamIndex:
-                otherTeamListPts = self.database.getArrayTeamPts(otherTeamIndex, season.startDate, season.finishDate)
+                otherTeamListPts = self.database.getArrayTeamPts(otherTeamIndex, season.startDate, finishDate)
                 otherTeams.append([otherTeamIndex, otherTeamListPts])
 
         numMatches = len(listPts)
@@ -1867,6 +1867,9 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
         self.html.addLine('</div>')
 
+        # Keep points and compare to in line.
+        self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
+
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Points</legend>')
         maxMatches = 1
         maxPoints = 3
@@ -1878,15 +1881,16 @@ class Render(walton.toolbar.IToolbar):
                 maxPoints = finalPoints
 
         # Draw a graph.
-        svgWidth = 500
+        # svgWidth = 500
+        svgWidth = len(listPts) * boxWidth
         svgHeight = 300
         self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
 
         # Graph Area.
-        top = 10
-        bottom = 10
-        left = 10
-        right = 10
+        top = 0
+        bottom = 0
+        left = 0
+        right = 0
 
         width = svgWidth - left - right
         height = svgHeight - top - bottom
@@ -1900,7 +1904,7 @@ class Render(walton.toolbar.IToolbar):
         yScale = height / maxPoints
 
         # Draw a Y axis scale.
-        for i in range(math.floor(maxPoints/15)):
+        for i in range(math.floor(maxPoints / 15)):
             pts = (i + 1) * 15
             if pts < maxPoints:
                 y = top + height - yScale * pts
@@ -1908,7 +1912,7 @@ class Render(walton.toolbar.IToolbar):
 
         # Draw a X axis scale. ???
         # print(f'maxMatches = {maxMatches}')
-        for i in range(math.floor(maxMatches/5)):
+        for i in range(math.floor(maxMatches / 5)):
             match = (i + 1) * 5
             # print(f'match = {match}')
             if pts < maxPoints:
@@ -1938,6 +1942,7 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
+        self.html.addLine('<br />')
 
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Compared To</legend>')
         self.html.addLine('<form action="app:show_team_season" method="get">')
@@ -1946,15 +1951,55 @@ class Render(walton.toolbar.IToolbar):
         opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else 0
 
         self.html.add('<select name="opponent" onchange="this.form.submit();">')
-        for otherTeamIndex in otherTeams:
-            otherTeam = self.database.getTeam(otherTeamIndex[0])
-            self.html.add(f'<option value="{otherTeam.index}"')
-            if otherTeam.index == opponentIndex:
+        for index in range(len(otherTeams)):
+            otherTeam = self.database.getTeam(otherTeams[index][0])
+            self.html.add(f'<option value="{index}"')
+            if index == opponentIndex:
                 self.html.add(' selected="yes"')
             self.html.add(f'>{otherTeam.name}</option>')
         self.html.addLine('</select>')
         self.html.addLine('</form>')
+
+        svgWidth = len(listPts) * boxWidth
+        yScale = 4
+        baseLine = 15 * yScale
+        svgHeight = 2 * baseLine
+        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+        # Draw the difference bar.
+        otherTeamListPts = otherTeams[opponentIndex][1]
+        for matchIndex in range(len(listPts)):
+            x = matchIndex * boxWidth
+            if len(otherTeamListPts) > matchIndex:
+                otherTeamMatchIndex = matchIndex
+            else:
+                otherTeamMatchIndex = len(otherTeamListPts) - 1
+
+            # print(f'matchIndex = {matchIndex}, difference = {listPts[matchIndex] - otherTeamListPts[otherTeamMatchIndex]}, otherTeamMatchIndex = {otherTeamMatchIndex}')
+
+            if listPts[matchIndex] > otherTeamListPts[otherTeamMatchIndex]:
+                difference = listPts[matchIndex] - otherTeamListPts[otherTeamMatchIndex]
+                if difference > 3:
+                    colour = 'green'
+                else:
+                    colour = 'yellow'
+                difference *= yScale
+                self.html.addLine(f'<rect x="{x}" y="{baseLine-difference}" width="{boxWidth}" height="{difference}" style="fill: {colour};" />')
+            else:
+                difference = otherTeamListPts[otherTeamMatchIndex] - listPts[matchIndex]
+                if difference > 3:
+                    colour = 'red'
+                else:
+                    colour = 'yellow'
+                difference *= yScale
+                self.html.addLine(f'<rect x="{x}" y="{baseLine}" width="{boxWidth}" height="{difference}" style="fill: {colour};" />')
+
+        # Draw the base line.
+        self.html.addLine(f'<line x1="0" y1="{baseLine}" x2="{svgWidth}" y2="{baseLine}" style="stroke: black; stroke-width: 1;" />')
+
+        self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
+        self.html.addLine('</div>')
 
         # Close the database.
         cndb.close()
