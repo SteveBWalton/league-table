@@ -1944,6 +1944,8 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
         self.html.addLine('<br />')
 
+        otherTeams.sort(key=sortTeamsByFinalPointsCompareTo, reverse=True)
+
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Compared To</legend>')
         self.html.addLine('<form action="app:show_team_season" method="get">')
         self.html.addLine(f'<input type="hidden" name="team" value="{teamIndex}" />')
@@ -1979,7 +1981,7 @@ class Render(walton.toolbar.IToolbar):
 
             if listPts[matchIndex] > otherTeamListPts[otherTeamMatchIndex]:
                 difference = listPts[matchIndex] - otherTeamListPts[otherTeamMatchIndex]
-                if difference > 3:
+                if difference > 3.1:
                     colour = 'green'
                 else:
                     colour = 'yellow'
@@ -1987,12 +1989,24 @@ class Render(walton.toolbar.IToolbar):
                 self.html.addLine(f'<rect x="{x}" y="{baseLine-difference}" width="{boxWidth}" height="{difference}" style="fill: {colour};" />')
             else:
                 difference = otherTeamListPts[otherTeamMatchIndex] - listPts[matchIndex]
-                if difference > 3:
+                if difference > 3.1:
                     colour = 'red'
                 else:
                     colour = 'yellow'
                 difference *= yScale
                 self.html.addLine(f'<rect x="{x}" y="{baseLine}" width="{boxWidth}" height="{difference}" style="fill: {colour};" />')
+
+        # Draw a grid.
+        for i in range(5):
+            pts = (i + 1) * 3
+            pts *= yScale
+            self.html.addLine(f'<line x1="0" y1="{baseLine + pts}" x2="{svgWidth}" y2="{baseLine + pts}" style="stroke: grey; stroke-width: 1;" />')
+            self.html.addLine(f'<line x1="0" y1="{baseLine - pts}" x2="{svgWidth}" y2="{baseLine - pts}" style="stroke: grey; stroke-width: 1;" />')
+
+        for matchIndex in range(len(listPts)):
+            x = matchIndex * boxWidth
+            self.html.addLine(f'<line x1="{x}" y1="{0}" x2="{x}" y2="{svgHeight}" style="stroke: grey; stroke-width: 1;" />')
+
 
         # Draw the base line.
         self.html.addLine(f'<line x1="0" y1="{baseLine}" x2="{svgWidth}" y2="{baseLine}" style="stroke: black; stroke-width: 1;" />')
@@ -2009,6 +2023,16 @@ class Render(walton.toolbar.IToolbar):
 def sortTeamsByFinalPoints(team):
     ''' Team sorting function for the graph in showTableSubset(). '''
     points = team[2]
+    if len(points) == 0:
+        return 0
+    finalPoints = points[len(points)-1]
+    return finalPoints
+
+
+
+def sortTeamsByFinalPointsCompareTo(team):
+    ''' Team sorting function for the graph in compare to. '''
+    points = team[1]
     if len(points) == 0:
         return 0
     finalPoints = points[len(points)-1]
