@@ -1960,6 +1960,8 @@ class Render(walton.toolbar.IToolbar):
                 self.html.add(' selected="yes"')
             self.html.add(f'>{otherTeam.name}</option>')
         self.html.addLine('</select>')
+        otherTeam = self.database.getTeam(otherTeams[opponentIndex][0])
+        self.html.addLine(otherTeam.toHtml())
         self.html.addLine('</form>')
 
         svgWidth = len(listPts) * boxWidth
