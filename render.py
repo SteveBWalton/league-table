@@ -1771,7 +1771,7 @@ class Render(walton.toolbar.IToolbar):
         for otherTeamIndex in listTeams:
             if otherTeamIndex != teamIndex:
                 otherTeamListPts = self.database.getArrayTeamPts(otherTeamIndex, season.startDate, finishDate)
-                otherTeams.append([otherTeamIndex, otherTeamListPts])
+                otherTeams.append([otherTeamIndex, '', otherTeamListPts])
 
         numMatches = len(listPts)
         numPositions = len(listTeams)
@@ -1797,7 +1797,7 @@ class Render(walton.toolbar.IToolbar):
             # Count the better positions.
             count = 1
             for otherTeam in otherTeams:
-                otherTeamListPts = otherTeam[1]
+                otherTeamListPts = otherTeam[2]
                 if len(otherTeamListPts) > matchIndex:
                     otherTeamMatchIndex = matchIndex
                 else:
@@ -1944,7 +1944,8 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
         self.html.addLine('<br />')
 
-        otherTeams.sort(key=sortTeamsByFinalPointsCompareTo, reverse=True)
+        # otherTeams.sort(key=sortTeamsByFinalPointsCompareTo, reverse=True)
+        otherTeams.sort(key=sortTeamsByFinalPoints, reverse=True)
 
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Compared To</legend>')
         self.html.addLine('<form action="app:show_team_season" method="get">')
@@ -1971,7 +1972,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
 
         # Draw the difference bar.
-        otherTeamListPts = otherTeams[opponentIndex][1]
+        otherTeamListPts = otherTeams[opponentIndex][2]
         for matchIndex in range(len(listPts)):
             x = matchIndex * boxWidth
             if len(otherTeamListPts) > matchIndex:
@@ -2025,16 +2026,6 @@ class Render(walton.toolbar.IToolbar):
 def sortTeamsByFinalPoints(team):
     ''' Team sorting function for the graph in showTableSubset(). '''
     points = team[2]
-    if len(points) == 0:
-        return 0
-    finalPoints = points[len(points)-1]
-    return finalPoints
-
-
-
-def sortTeamsByFinalPointsCompareTo(team):
-    ''' Team sorting function for the graph in compare to. '''
-    points = team[1]
     if len(points) == 0:
         return 0
     finalPoints = points[len(points)-1]
