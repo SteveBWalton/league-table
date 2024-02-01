@@ -1870,6 +1870,29 @@ class Render(walton.toolbar.IToolbar):
         # Keep points and compare to in line.
         self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
 
+        # otherTeams.sort(key=sortTeamsByFinalPointsCompareTo, reverse=True)
+        otherTeams.sort(key=sortTeamsByFinalPoints, reverse=True)
+
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Compared To</legend>')
+        self.html.addLine('<form action="app:show_team_season" method="get">')
+        self.html.addLine(f'<input type="hidden" name="team" value="{teamIndex}" />')
+        self.html.addLine(f'<input type="hidden" name="season" value="{seasonIndex}" />')
+        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else 0
+
+        self.html.add('<select name="opponent" onchange="this.form.submit();">')
+        for index in range(len(otherTeams)):
+            otherTeam = self.database.getTeam(otherTeams[index][0])
+            self.html.add(f'<option value="{index}"')
+            if index == opponentIndex:
+                self.html.add(' selected="yes"')
+            self.html.add(f'>{otherTeam.name}</option>')
+        self.html.addLine('</select>')
+        otherTeam = self.database.getTeam(otherTeams[opponentIndex][0])
+        self.html.addLine(otherTeam.toHtml())
+        self.html.addLine('</form>')
+        self.html.addLine('</fieldset>')
+        self.html.addLine('<br/>')
+
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Points</legend>')
         maxMatches = 1
         maxPoints = 3
@@ -1944,26 +1967,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
         self.html.addLine('<br />')
 
-        # otherTeams.sort(key=sortTeamsByFinalPointsCompareTo, reverse=True)
-        otherTeams.sort(key=sortTeamsByFinalPoints, reverse=True)
-
-        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Compared To</legend>')
-        self.html.addLine('<form action="app:show_team_season" method="get">')
-        self.html.addLine(f'<input type="hidden" name="team" value="{teamIndex}" />')
-        self.html.addLine(f'<input type="hidden" name="season" value="{seasonIndex}" />')
-        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else 0
-
-        self.html.add('<select name="opponent" onchange="this.form.submit();">')
-        for index in range(len(otherTeams)):
-            otherTeam = self.database.getTeam(otherTeams[index][0])
-            self.html.add(f'<option value="{index}"')
-            if index == opponentIndex:
-                self.html.add(' selected="yes"')
-            self.html.add(f'>{otherTeam.name}</option>')
-        self.html.addLine('</select>')
-        otherTeam = self.database.getTeam(otherTeams[opponentIndex][0])
-        self.html.addLine(otherTeam.toHtml())
-        self.html.addLine('</form>')
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Difference</legend>')
 
         svgWidth = len(listPts) * boxWidth
         yScale = 4
