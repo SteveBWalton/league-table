@@ -1902,6 +1902,13 @@ class Render(walton.toolbar.IToolbar):
             finalPoints = listPts[len(listPts) - 1]
             if finalPoints > maxPoints:
                 maxPoints = finalPoints
+        otherTeamListPts = otherTeams[opponentIndex][2]
+        if len(otherTeamListPts) > 0:
+            if len(otherTeamListPts) > maxMatches:
+                maxMatches = len(otherTeamListPts)
+            finalPoints = otherTeamListPts[len(otherTeamListPts) - 1]
+            if finalPoints > maxPoints:
+                maxPoints = finalPoints
 
         # Draw a graph.
         # svgWidth = 500
@@ -1949,7 +1956,7 @@ class Render(walton.toolbar.IToolbar):
             x += xScale
             y = top + height - yScale * pts
             self.html.add(f'{x},{y} ')
-        self.html.addLine(f'" style="fill: none; stroke: red; stroke-width: 2;" />') # clip-path="url(#graph-area)"
+        self.html.addLine(f'" style="fill: none; stroke: green; stroke-width: 2;" />') # clip-path="url(#graph-area)"
 
         # Draw the 5 game moving average.
         if len(listPts) >= 5:
@@ -1962,6 +1969,15 @@ class Render(walton.toolbar.IToolbar):
                 y = top + height - yScale * movingAveragePts
                 self.html.add(f'{x},{y} ')
             self.html.addLine(f'" style="fill: none; stroke: green; stroke-width: 2;" />') # clip-path="url(#graph-area)"
+
+        # Draw the opponent points.
+        x = left
+        self.html.add(f'<polyline points="{x},{top + height} ')
+        for pts in otherTeamListPts:
+            x += xScale
+            y = top + height - yScale * pts
+            self.html.add(f'{x},{y} ')
+        self.html.addLine(f'" style="fill: none; stroke: red; stroke-width: 1;" />') # clip-path="url(#graph-area)"
 
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
@@ -1976,7 +1992,6 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
 
         # Draw the difference bar.
-        otherTeamListPts = otherTeams[opponentIndex][2]
         for matchIndex in range(len(listPts)):
             x = matchIndex * boxWidth
             if len(otherTeamListPts) > matchIndex:
