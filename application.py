@@ -84,9 +84,9 @@ class Application(walton.application.IApplication):
         fontStyleSheet = self.generateFontStyleSheet(os.path.join(folder, 'font.txt'), self.configuration.fontName, folder)
 
         # Generate a space stylesheet.
-        spaceStyleSheet = os.path.join(folder, 'table-space-{}{}.css'.format(self.configuration.verticalSpace, self.configuration.horizontalSpace))
+        spaceStyleSheet = os.path.join(folder, f'table-space-{self.configuration.verticalSpace}{self.configuration.horizontalSpace}.css')
         fileOutput = open(spaceStyleSheet, 'w')
-        fileOutput.write('td {{ padding: {}px {}px {}px {}px; }}\n'.format(self.configuration.verticalSpace, self.configuration.horizontalSpace, self.configuration.verticalSpace, self.configuration.horizontalSpace))
+        fileOutput.write(f'td {{ padding: {self.configuration.verticalSpace}px {self.configuration.horizontalSpace}px {self.configuration.verticalSpace}px {self.configuration.horizontalSpace}px; }}\n')
         fileOutput.close()
 
         # Remove the existing stylesheets.
@@ -95,7 +95,7 @@ class Application(walton.application.IApplication):
         # Local files.
         self.render.html.stylesheets.append('file:' + os.path.join(folder, 'table.css'))
         if self.configuration.colourScheme != 'none':
-            self.render.html.stylesheets.append('file:' + os.path.join(folder, 'table-{}.css'.format(self.configuration.colourScheme)))
+            self.render.html.stylesheets.append('file:' + os.path.join(folder, f'table-{self.configuration.colourScheme}.css'))
         self.render.html.stylesheets.append('file:' + sizeStyleSheet)
         self.render.html.stylesheets.append('file:' + fontStyleSheet)
         self.render.html.stylesheets.append('file:' + spaceStyleSheet)
