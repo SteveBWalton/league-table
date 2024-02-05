@@ -1776,6 +1776,9 @@ class Render(walton.toolbar.IToolbar):
         numMatches = len(listPts)
         numPositions = len(listTeams)
 
+        # Keep nonagram away from matches.
+        self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
+
         # Keep league position and match results in line.
         self.html.addLine('<div style="display: inline-block; vertical-align: top;">')
 
@@ -2035,6 +2038,12 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
+        self.html.addLine('</div>')
+        self.html.addLine('<br />')
+
+        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Nonogram</legend>')
+        self.html.addLine('</fieldset>')
+
         self.html.addLine('</div>')
 
         # Close the database.
