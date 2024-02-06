@@ -2051,8 +2051,42 @@ class Render(walton.toolbar.IToolbar):
         for index in range(len(otherTeams)):
             otherTeam = self.database.getTeam(otherTeams[index][0])
             x = 200
-            y = (index + 1) * boxHeight
+            y = (index + 1) * boxHeight - 2
             self.html.addLine(f'<text text-anchor="start" x={x} y={y} font-size="8pt">{otherTeam.name}</text>')
+
+            goodPts = 0
+            availablePts = 0
+            badPts = 0
+
+            # Get the home results.
+            sql = f"SELECT HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE HOME_TEAM_ID = {team.index} AND AWAY_TEAM_ID = {otherTeam.index} AND THE_DATE >= '{season.startDate}' AND THE_DATE <= '{finishDate}';"
+            cursor = cndb.execute(sql)
+            row = cursor.fetchone()
+            cursor.close()
+
+            if row is None:
+                availablePts += 3
+            elif row[0] == row[1]:
+                goodPts += 1
+                badPts += 1
+            elif row[0] > row[1]:
+                goodPts += 3
+            else:
+                badPts += 3
+
+            # Draw the bar.
+            y = index * boxHeight
+            xScale = 10
+            x = 100 - (badPts + (availablePts / 2)) * xScale
+            if badPts > 0:
+                self.html.addLine(f'<rect x="{x}" y="{y}" width="{badPts * xScale}" height="{boxHeight}" style="fill: red;" />')
+                x += badPts * xScale
+            if availablePts > 0:
+                self.html.addLine(f'<rect x="{x}" y="{y}" width="{availablePts * xScale}" height="{boxHeight}" style="fill: yellow;" />')
+                x += availablePts * xScale
+            if goodPts > 0:
+                self.html.addLine(f'<rect x="{x}" y="{y}" width="{goodPts * xScale}" height="{boxHeight}" style="fill: green;" />')
+                x += goodPts * xScale
 
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
