@@ -2042,6 +2042,19 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<br />')
 
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Nonogram</legend>')
+        svgWidth = 300
+        svgHeight = boxHeight * (1 + len(otherTeams))
+
+        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+        # Label the rows.
+        for index in range(len(otherTeams)):
+            otherTeam = self.database.getTeam(otherTeams[index][0])
+            x = 200
+            y = (index + 1) * boxHeight
+            self.html.addLine(f'<text text-anchor="start" x={x} y={y} font-size="8pt">{otherTeam.name}</text>')
+
+        self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
 
         self.html.addLine('</div>')
