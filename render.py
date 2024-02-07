@@ -2032,7 +2032,6 @@ class Render(walton.toolbar.IToolbar):
             x = matchIndex * boxWidth
             self.html.addLine(f'<line x1="{x}" y1="{0}" x2="{x}" y2="{svgHeight}" style="stroke: grey; stroke-width: 1;" />')
 
-
         # Draw the base line.
         self.html.addLine(f'<line x1="0" y1="{baseLine}" x2="{svgWidth}" y2="{baseLine}" style="stroke: black; stroke-width: 1;" />')
 
@@ -2041,7 +2040,8 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</div>')
         self.html.addLine('<br />')
 
-        self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Nonogram</legend>')
+        self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>{team.name} Nonogram</legend>')
+        xScale = 14
         svgWidth = 300
         svgHeight = boxHeight * (1 + len(otherTeams))
 
@@ -2050,8 +2050,8 @@ class Render(walton.toolbar.IToolbar):
         # Label the rows.
         for index in range(len(otherTeams)):
             otherTeam = self.database.getTeam(otherTeams[index][0])
-            x = 200
-            y = (index + 1) * boxHeight - 2
+            x = 12 * xScale + 2
+            y = (index + 1) * boxHeight - 3
             self.html.addLine(f'<text text-anchor="start" x={x} y={y} font-size="8pt">{otherTeam.name}</text>')
 
             goodPts = 0
@@ -2074,10 +2074,25 @@ class Render(walton.toolbar.IToolbar):
             else:
                 badPts += 3
 
+            # Get the away results.
+            sql = f"SELECT HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE HOME_TEAM_ID = {otherTeam.index} AND AWAY_TEAM_ID = {team.index} AND THE_DATE >= '{season.startDate}' AND THE_DATE <= '{finishDate}';"
+            cursor = cndb.execute(sql)
+            row = cursor.fetchone()
+            cursor.close()
+
+            if row is None:
+                availablePts += 3
+            elif row[0] == row[1]:
+                goodPts += 1
+                badPts += 1
+            elif row[0] > row[1]:
+                badPts += 3
+            else:
+                goodPts += 3
+
             # Draw the bar.
             y = index * boxHeight
-            xScale = 10
-            x = 100 - (badPts + (availablePts / 2)) * xScale
+            x = 6 * xScale - (badPts + (availablePts / 2)) * xScale
             if badPts > 0:
                 self.html.addLine(f'<rect x="{x}" y="{y}" width="{badPts * xScale}" height="{boxHeight}" style="fill: red;" />')
                 x += badPts * xScale
@@ -2087,6 +2102,19 @@ class Render(walton.toolbar.IToolbar):
             if goodPts > 0:
                 self.html.addLine(f'<rect x="{x}" y="{y}" width="{goodPts * xScale}" height="{boxHeight}" style="fill: green;" />')
                 x += goodPts * xScale
+
+        # Draw a grid.
+        for i in range(12):
+            x = (i + 1) * xScale
+            y = boxHeight * len(otherTeams)
+            self.html.addLine(f'<line x1="{x}" y1="0" x2="{x}" y2="{y}" style="stroke: grey; stroke-width: 1;" />')
+        for i in range(len(otherTeams)):
+            x = 12 * xScale
+            y = boxHeight * (i + 1)
+            self.html.addLine(f'<line x1="0" y1="{y}" x2="{x}" y2="{y}" style="stroke: grey; stroke-width: 1;" />')
+        x = 6 * xScale
+        y = boxHeight * len(otherTeams)
+        self.html.addLine(f'<line x1="{x}" y1="0" x2="{x}" y2="{y}" style="stroke: black; stroke-width: 1;" />')
 
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
