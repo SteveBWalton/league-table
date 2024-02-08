@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+0#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     # Welcome message.
-    print(f'{walton.ansi.LIGHT_YELLOW}League Table{walton.ansi.RESET_ALL} by Steve Walton © 2022-2023.')
+    print(f'{walton.ansi.LIGHT_YELLOW}League Table{walton.ansi.RESET_ALL} by Steve Walton © 2022-2024.')
     print(f'Python Version {sys.version_info.major}·{sys.version_info.minor}·{sys.version_info.micro}.  Expecting Python 3.')
 
 
