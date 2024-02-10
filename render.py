@@ -2052,7 +2052,7 @@ class Render(walton.toolbar.IToolbar):
             otherTeam = self.database.getTeam(otherTeams[index][0])
             x = 12 * xScale + 2
             y = (index + 1) * boxHeight - 3
-            self.html.addLine(f'<text text-anchor="start" x={x} y={y} font-size="8pt">{otherTeam.name}</text>')
+            self.html.addLine(f'<a xlink:href="app:show_team_season?team={otherTeam.index}&season={seasonIndex}"><text text-anchor="start" x={x} y={y} font-size="8pt">{otherTeam.name}</text></a>')
 
             goodPts = 0
             availablePts = 0
