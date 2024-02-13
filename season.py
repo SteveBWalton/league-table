@@ -86,7 +86,7 @@ class Season:
 
 
     def getLinks(self):
-        ''' Returns a dictionary of links for this team. '''
+        ''' Returns a dictionary of links for this season. '''
         # Default to an empty dictionary.
         links = {}
 
