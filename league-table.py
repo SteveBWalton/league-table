@@ -104,3 +104,4 @@ if __name__ == '__main__':
 
 
     print(f'Goodbye from the {walton.ansi.LIGHT_YELLOW}League Table{walton.ansi.RESET_ALL} database.')
+

@@ -70,7 +70,7 @@ import glade.edit_matches
 
 class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscreen):
     '''
-    Class to represent the main window for the 'table' program.
+    Class to represent the main window for the 'league-table' program.
 
     :ivar int noEvents: Set to greater than zero to ingore signals.  Restore to zero to respond to signals.
     :ivar string request: The last page request.
