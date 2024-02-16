@@ -119,7 +119,7 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
 
         # The GTK+ builder for the main window.
         self.builder = Gtk.Builder()
-        self.builder.add_from_file('{}/main_window.glade'.format(os.path.dirname(os.path.realpath(__file__))))
+        self.builder.add_from_file(f'{os.path.dirname(os.path.realpath(__file__))}/main_window.glade')
 
         # The main window for the 'Sports Results' database.
         self.window = self.builder.get_object('windowMain')
