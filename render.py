@@ -1192,6 +1192,51 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
 
+        # Show future matches.
+        isFirst = True
+        sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE ((HOME_TEAM_ID = ? AND AWAY_TEAM_ID = ?) OR (HOME_TEAM_ID = ? AND AWAY_TEAM_ID = ?)) AND THE_DATE > ? ORDER BY THE_DATE DESC;"
+        params = (team1Index, team2Index, team2Index, team1Index, theDate)
+        cursor = cndb.execute(sql, params)
+        for row in cursor:
+            if isFirst:
+                self.html.addLine('<fieldset><legend>Future Matches</legend>')
+                self.html.addLine('<table>')
+                isFirst = False
+            theMatchDate = datetime.date(*time.strptime(row[0], "%Y-%m-%d")[:3])
+            formatMatchDate = self.database.formatDate(theMatchDate)
+            isDateGuess = row[1] == 1
+            if isDateGuess or theMatchDate > datetime.date.today():
+                formatMatchDate = f'({row[0]})'
+            homeTeam = self.database.getTeam(row[2])
+            awayTeam = self.database.getTeam(row[3])
+            season = self.database.getSeason(row[6])
+            if team1Index == homeTeam.index:
+                if row[4] > row[5]:
+                    className = 'win2'
+                elif row[4] < row[5]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+            else:
+                if row[4] < row[5]:
+                    className = 'win2'
+                elif row[4] > row[5]:
+                    className = 'lost2'
+                else:
+                    className = 'draw2'
+
+            self.html.add(f'<tr class="{className}">')
+            self.html.add(f'<td class="date" style="text-align: center;"><a href="app:head?team1={team1Index}&team2={team2Index}&date={row[0]}">{formatMatchDate}</a></td>')
+            self.html.add(f'<td class="date" style="white-space: nowrap;">{season.toHtml()}</td>')
+            self.html.add(f'<td style="text-align: right;">{homeTeam.toHtml()}</td>')
+            self.html.add(f'<td class="goals">{row[4]}</td>')
+            self.html.add(f'<td class="goals">{row[5]}</td>')
+            self.html.add(f'<td>{awayTeam.toHtml()}</td>')
+            self.html.addLine('</tr>')
+        if not isFirst:
+            self.html.addLine('</table>')
+            self.html.addLine('</fieldset>')
+
         # Close the database.
         cndb.close()
 
