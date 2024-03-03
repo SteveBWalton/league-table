@@ -385,9 +385,9 @@ class Render(walton.toolbar.IToolbar):
 
                 # Debuging test the 2 box styles.
                 if False:
-                    self.drawPossiblePointsBox1(400, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, season.numMatches * row[11] / played, safePoints, requiredPoints)
+                    self.drawPossiblePointsBox1(300, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, season.numMatches * row[11] / played, safePoints, requiredPoints)
                 else:
-                    self.drawPossiblePointsBox(400, 18, minPoints, maxPoints, teamMinPoints, played, (season.numMatches - played), safePoints, requiredPoints)
+                    self.drawPossiblePointsBox(300, 18, minPoints, maxPoints, teamMinPoints, played, (season.numMatches - played), safePoints, requiredPoints)
 
                 self.html.add('</td>')
 
