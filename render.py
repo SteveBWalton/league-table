@@ -2164,6 +2164,18 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
 
+        self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>Points Prediction</legend>')
+        self.html.addLine('<table>')
+        count = 0
+        for pts in listPts:
+            count += 1
+            self.html.add('<tr><td>')
+            self.drawPossiblePointsBox(600, 16, 0, season.numMatches * 3, pts, count, season.numMatches - count, season.numMatches, 2 * season.numMatches)
+            self.html.addLine('</td></tr>')
+        self.html.addLine('</table>')
+        self.html.addLine('</fieldset>')
+
+
         self.html.addLine('</div>')
 
         # Close the database.
