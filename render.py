@@ -210,9 +210,10 @@ class Render(walton.toolbar.IToolbar):
         self.html.add('<svg class="wdlbox" width="{}" height="{}" style="vertical-align: middle;">'.format(width, height))
 
         # Draw the possible points in yellow.
-        pixMinimum = int(round(width * (actualPoints - scaleMin) / (scaleMax - scaleMin), 0))
-        pixMaximum = int(round(width * (actualPoints + 3 * remainingGames - scaleMin) / (scaleMax - scaleMin), 0))
-        self.html.add(f'<rect class="wdlbox_draw" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
+        if False:
+            pixMinimum = int(round(width * (actualPoints - scaleMin) / (scaleMax - scaleMin), 0))
+            pixMaximum = int(round(width * (actualPoints + 3 * remainingGames - scaleMin) / (scaleMax - scaleMin), 0))
+            self.html.add(f'<rect class="wdlbox_draw" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
 
         # Draw the confidence interval points in green.
         if False:
@@ -260,6 +261,21 @@ class Render(walton.toolbar.IToolbar):
         # Draw a line at expected points.
         tickPos = int(round(width * ((gamesPlayed + remainingGames) * (actualPoints / gamesPlayed) - scaleMin) / (scaleMax - scaleMin), 0))
         self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="{height}" style="stroke-width: 2;" />')
+
+        if True:
+            # Draw error bars not yellow zone.
+            pixAbsMinimum = int(round(width * (actualPoints - scaleMin) / (scaleMax - scaleMin), 0))
+            pixAbsMaximum = int(round(width * (actualPoints + 3 * remainingGames - scaleMin) / (scaleMax - scaleMin), 0))
+            # self.html.add(f'<rect class="wdlbox_draw" x="{pixMinimum}" y="0" width="{pixMaximum - pixMinimum}" height="{height}" style="stroke-width: 0; stroke: rgb(0, 0, 0);" />')
+            minY = int(round(height / 2, 0))
+            self.html.add(f'<line class="wdlbox" x1="{pixAbsMinimum}" y1="{height / 4}" x2="{pixAbsMinimum}" y2="{height * 3 / 4}" style="stroke-width: 2;" />')
+            self.html.add(f'<line class="wdlbox" x1="{pixAbsMinimum}" y1="{minY}" x2="{pixMinimum}" y2="{minY}" style="stroke-width: 2;" />')
+            self.html.add(f'<line class="wdlbox" x1="{pixMinimum}" y1="{0}" x2="{pixMinimum}" y2="{height}" style="stroke-width: 2;" />')
+
+            self.html.add(f'<line class="wdlbox" x1="{pixAbsMaximum}" y1="{height / 4}" x2="{pixAbsMaximum}" y2="{height * 3 / 4}" style="stroke-width: 2;" />')
+            self.html.add(f'<line class="wdlbox" x1="{pixAbsMaximum}" y1="{minY}" x2="{pixMaximum}" y2="{minY}" style="stroke-width: 2;" />')
+            self.html.add(f'<line class="wdlbox" x1="{pixMaximum}" y1="{0}" x2="{pixMaximum}" y2="{height}" style="stroke-width: 2;" />')
+
         self.html.addLine('</svg>')
 
 
