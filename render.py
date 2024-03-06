@@ -2183,14 +2183,25 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>Points Prediction</legend>')
         self.html.addLine('<table>')
         count = 0
+        previousPts = 0
         for pts in listPts:
             count += 1
             self.html.add('<tr><td>')
+            self.html.addLine(f'<svg width="{boxWidth}" height="{boxHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+            colour = 'yellow'
+            if pts > previousPts + 1.1:
+                colour = 'green'
+            elif pts < previousPts + 0.9:
+                colour = 'red'
+            self.html.addLine(f'<rect x="0" y="0" width="{boxWidth}" height="{boxHeight}" style="fill: {colour};" />')
+            previousPts = pts
+            self.html.addLine('</svg></td><td>')
+
             self.drawPossiblePointsBox(600, 16, 0, season.numMatches * 3, pts, count, season.numMatches - count, season.numMatches, 2 * season.numMatches)
             self.html.addLine('</td></tr>')
         self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
-
 
         self.html.addLine('</div>')
 
