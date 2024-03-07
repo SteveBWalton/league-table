@@ -147,18 +147,18 @@ class Team:
 
 
 
-    def read(self, teamIndex):
+    def read(self, teamIdx):
         '''
         Read this team from the database.
 
-        :param int teamIndex: Specifies the index of the team to read.
+        :param int teamIdx: Specifies the index of the team to read.
         '''
         # Connect to the database.
         cndb = sqlite3.connect(self.database.filename)
 
         # sql = 'SELECT Name, CountryID, DoB, DoD, FirstYear, LastYear, Comments, InternetURL FROM Teams WHERE ID = ?;'
         sql = 'SELECT LABEL, COMMENTS FROM TEAMS WHERE ID = ?;'
-        params = (teamIndex, )
+        params = (teamIdx, )
         cursor = cndb.execute(sql, params)
         row = cursor.fetchone()
         cursor.close()
@@ -168,21 +168,9 @@ class Team:
             print(params)
             return None
 
-        self.index = teamIndex
+        self.index = teamIdx
         self.name = row[0]
         self.comments = row[1]
-        #self.countryIndex = row[1]
-        #if row[2] == None:
-        #    self.dob = None
-        #else:
-        #    #oTeam.dob = datetime.strptime(row[2],'%Y-%m-%d')
-        #    self.dob = datetime.date(*time.strptime(row[2], "%Y-%m-%d")[:3])
-        #if row[3] == None:
-        #    self.dod = None
-        #else:
-        #    self.dod = datetime.date(*time.strptime(row[3], "%Y-%m-%d")[:3])
-        #self.firstYear = row[4]
-        #self.lastYear = row[5]
 
         # Close the database.
         cndb.close()
