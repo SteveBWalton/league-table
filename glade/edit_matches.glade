@@ -53,6 +53,10 @@
       <column type="gint"/>
       <!-- column-name AwayScore -->
       <column type="gint"/>
+      <!-- column-name HomeBonusPts -->
+      <column type="gint"/>
+      <!-- column-name AwayBonusPts -->
+      <column type="gint"/>
     </columns>
   </object>
   <object class="GtkListStore" id="liststoreModes">

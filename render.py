@@ -89,7 +89,8 @@ class Render(walton.toolbar.IToolbar):
         }
 
         # Indentify the current last season.
-        self.lastSeasonIndex = 4
+        # TODO: Calculate this!
+        self.lastSeasonIndex = 6
 
 
 
@@ -1676,7 +1677,7 @@ class Render(walton.toolbar.IToolbar):
         includedTeams.sort(key=sortTeamsByFinalPoints, reverse=True)
 
         # Draw a graph.
-        svgWidth = 600
+        svgWidth = 700
         svgHeight = 500
         self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
 
@@ -1695,7 +1696,7 @@ class Render(walton.toolbar.IToolbar):
         xScale = width / maxMatches
 
         # Y Axis.
-        yScale = height / maxPoints
+        yScale = height / (maxPoints + 0.5)
 
         # Draw the points.
         lineColours = ['red', 'blue', 'green', 'orange', 'hotpink', 'gray', 'brown', 'brown']

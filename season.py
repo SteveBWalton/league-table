@@ -141,6 +141,7 @@ class Season:
         self.positivePos = 0 if row[7] is None else int(row[7])
 
         # For debugging.
+        # TODO: Calculate this.
         if self.index == 1:
             self._previousSeasonIndex = 2
             self._nextSeasonIndex = 4
@@ -152,10 +153,13 @@ class Season:
             self._previousSeasonIndex = 5
         elif self.index == 4:
             self._previousSeasonIndex = 1
-            self._nextSeasonIndex = None
+            self._nextSeasonIndex = 6
         elif self.index == 5:
             self._previousSeasonIndex = None
             self._nextSeasonIndex = 3
+        elif self.index == 6:
+            self._previousSeasonIndex = 4
+            self._nextSeasonIndex = None
 
         # Close the database.
         cndb.close()

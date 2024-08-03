@@ -416,16 +416,18 @@ class EditMatches:
                 awayTeamIndex = liststoreMatches.get_value(iterMatches, 6)
                 homeTeamFor = liststoreMatches.get_value(iterMatches, 8)
                 awayTeamFor = liststoreMatches.get_value(iterMatches, 9)
+                homeBonusPts = liststoreMatches.get_value(iterMatches, 10)
+                awayBonusPts = liststoreMatches.get_value(iterMatches, 11)
 
                 if matchIndex == 0:
-                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR) VALUES ({self.seasonIndex}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor}, {homeTeamFor}, {awayTeamFor});"
+                    sql = f"INSERT INTO MATCHES (SEASON_ID, THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, REAL_HOME_TEAM_FOR, REAL_AWAY_TEAM_FOR, HOME_BONUS_PTS, AWAY_BONUS_PTS) VALUES ({self.seasonIndex}, {theDate}, {isDateGuess}, {homeTeamIndex}, {awayTeamIndex}, {homeTeamFor}, {awayTeamFor}, {homeTeamFor}, {awayTeamFor}, {homeBonusPts}, {awayBonusPts});"
                 else:
                     if activeMode == 1:
                         # What if mode.
-                        sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
+                        sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor}, HOME_BONUS_PTS = {homeBonusPts}, AWAY_BONUS_PTS = {awayBonusPts} WHERE ID = {matchIndex};"
                     else:
                         # Real mode.
-                        sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor}, REAL_HOME_TEAM_FOR = {homeTeamFor}, REAL_AWAY_TEAM_FOR = {awayTeamFor} WHERE ID = {matchIndex};"
+                        sql = f"UPDATE MATCHES SET THE_DATE = {theDate}, THE_DATE_GUESS = {isDateGuess}, HOME_TEAM_ID = {homeTeamIndex}, AWAY_TEAM_ID = {awayTeamIndex}, HOME_TEAM_FOR = {homeTeamFor}, AWAY_TEAM_FOR = {awayTeamFor}, REAL_HOME_TEAM_FOR = {homeTeamFor}, REAL_AWAY_TEAM_FOR = {awayTeamFor}, HOME_BONUS_PTS = {homeBonusPts}, AWAY_BONUS_PTS = {awayBonusPts} WHERE ID = {matchIndex};"
 
                 # Execute the command.
                 # print(sql)
@@ -508,7 +510,7 @@ class EditMatches:
 
         if sql == '':
             return
-        # print(sql)
+        print(sql)
 
         # Build the list of actual matches.
         liststoreMatches = self.builder.get_object('liststoreMatches')
@@ -533,7 +535,7 @@ class EditMatches:
             else:
                 team = self.database.getTeam(row[4])
                 awayTeamName = team.toHtml(False, True, None)
-            liststoreMatches.set(newRow, 0, row[0], 1, 0, 2, theDate, 3, isDateGuess, 4, row[3], 5, homeTeamName, 6, row[4], 7, awayTeamName, 8, row[5], 9, row[6])
+            liststoreMatches.set(newRow, 0, row[0], 1, 0, 2, theDate, 3, isDateGuess, 4, row[3], 5, homeTeamName, 6, row[4], 7, awayTeamName, 8, row[5], 9, row[6], 10, row[7], 11, row[8])
         cursor.close()
 
         # Close the database.
@@ -551,26 +553,6 @@ class EditMatches:
         :param Database database: Specify the database to read and write matches.
         :param int tournamentSeasonIndex: Specify the tournament season to edit.
         '''
-
-        #liststoreSeasons = self.builder.get_object('liststoreSeasons')
-        #cboSeason = self.builder.get_object('cboSeason')
-        #cell = Gtk.CellRendererText()
-        #cboSeason.pack_start(cell, True)
-        #cboSeason.add_attribute(cell, 'text', 1)
-
-        # Add the seasons to the combobox liststoreSeasons.
-        #count = 0
-        #seasons = database.currentSport.getSeasons()
-        #for index, seasonIndex in enumerate(seasons):
-        #    season = database.getSeason(seasonIndex)
-        #    newRow = liststoreSeasons.append(None)
-        #    liststoreSeasons.set(newRow, 0, season.index, 1, season.name)
-        #    # print('{} {} {}'.format(index, season.index, season.name))
-        #    if seasonIndex == self.tournamentSeason.seasonIndex:
-        #        count = index
-        ## print('Set season to {}'.format(count))
-        #cboSeason.set_active(count)
-
         # Save the parameters, initialise the class.
         self.database = database
         self.seasonIndex = seasonIndex
