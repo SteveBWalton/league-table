@@ -457,6 +457,38 @@
                             </child>
                           </object>
                         </child>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="treeviewcolumnHomeBonus">
+                            <property name="visible">False</property>
+                            <property name="resizable">True</property>
+                            <property name="title">Home Bonus</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="cellrenderertextHomeBonus">
+                                <property name="editable">True</property>
+                                <signal name="edited" handler="on_cellrenderertextHomeBonus_edited" swapped="no"/>
+                              </object>
+                              <attributes>
+                                <attribute name="text">10</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="treeviewcolumnAwayBonus">
+                            <property name="visible">False</property>
+                            <property name="resizable">True</property>
+                            <property name="title">Away Bonus</property>
+                            <child>
+                              <object class="GtkCellRendererText" id="cellrenderertextAwayBonus">
+                                <property name="editable">True</property>
+                                <signal name="edited" handler="on_cellrenderertextAwayBonus_edited" swapped="no"/>
+                              </object>
+                              <attributes>
+                                <attribute name="text">11</attribute>
+                              </attributes>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
@@ -506,7 +538,18 @@
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkToggleButton" id="toggleButtonBonus">
+                        <property name="label" translatable="yes">Bonus</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <signal name="toggled" handler="on_toggleButtonBonus_toggled" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
                     </child>
                     <child>
                       <placeholder/>

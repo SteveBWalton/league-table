@@ -81,6 +81,10 @@ class EditMatches:
         #cellrenderertextSeed1.set_alignment(0.5, 0.5)
         #cellrenderertextSeed2 = self.builder.get_object('cellrenderertextSeed2')
         #cellrenderertextSeed2.set_alignment(0.5, 0.5)
+        cellrenderertextHomeBonus = self.builder.get_object('cellrenderertextHomeBonus')
+        cellrenderertextHomeBonus.set_alignment(0.5, 0.5)
+        cellrenderertextAwayBonus = self.builder.get_object('cellrenderertextAwayBonus')
+        cellrenderertextAwayBonus.set_alignment(0.5, 0.5)
 
         # Add the events to the dialog.
         signals = {
@@ -93,7 +97,10 @@ class EditMatches:
             'on_cellrenderertextScore_edited'       : self._homeScoreEdited,
             'on_cellrenderercomboTeam2_changed'     : self._awayTeamChanged,
             'on_cellrenderertextAwayScore_edited'   : self._awayScoreEdited,
+            'on_cellrenderertextHomeBonus_edited'   : self._homeBonusEdited,
+            'on_cellrenderertextAwayBonus_edited'   : self._awayBonusEdited,
             'on_buttonEditSeason_clicked'           : self._editSeason,
+            'on_toggleButtonBonus_toggled'          : self._bonusToggled,
         }
         self.builder.connect_signals(signals)
 
@@ -315,7 +322,7 @@ class EditMatches:
 
 
     def _awayScoreEdited(self, widget, row, newValue):
-        ''' Signal handler for the home score value changing in a cell. '''
+        ''' Signal handler for the away score value changing in a cell. '''
         # Convert the input into a number.
         awayScore = -1
         try:
@@ -329,6 +336,49 @@ class EditMatches:
             iterMatches = liststoreMatches.get_iter(row)
             liststoreMatches.set(iterMatches, 1, 1, 9, awayScore)
             self.isChanged = True
+
+
+
+    def _homeBonusEdited(self, widget, row, newValue):
+        ''' Signal handler for the home bonus pts value changing in a cell. '''
+        homeBonus = 0
+        try:
+            homeBonus = int(newValue)
+        except:
+            homeBonus = -1
+
+        liststoreMatches = self.builder.get_object('liststoreMatches')
+        iterMatches = liststoreMatches.get_iter(row)
+        liststoreMatches.set(iterMatches, 1, 1, 10, homeBonus)
+        self.isChanged = True
+
+
+
+    def _awayBonusEdited(self, widget, row, newValue):
+        ''' Signal handler for the away bonus pts value changing in a cell. '''
+        awayBonus = 0
+        try:
+            awayBonus = int(newValue)
+        except:
+            awayBonus = -1
+
+        liststoreMatches = self.builder.get_object('liststoreMatches')
+        iterMatches = liststoreMatches.get_iter(row)
+        liststoreMatches.set(iterMatches, 1, 1, 11, awayBonus)
+        self.isChanged = True
+
+
+
+    def _bonusToggled(self, widget):
+        ''' Signal handler for the show points button toggled. '''
+        treeviewcolumnHomeBonus = self.builder.get_object('treeviewcolumnHomeBonus')
+        treeviewcolumnAwayBonus = self.builder.get_object('treeviewcolumnAwayBonus')
+        if widget.get_active():
+            treeviewcolumnHomeBonus.set_visible(True)
+            treeviewcolumnAwayBonus.set_visible(True)
+        else:
+            treeviewcolumnHomeBonus.set_visible(False)
+            treeviewcolumnAwayBonus.set_visible(False)
 
 
 
@@ -510,7 +560,7 @@ class EditMatches:
 
         if sql == '':
             return
-        print(sql)
+        # print(sql)
 
         # Build the list of actual matches.
         liststoreMatches = self.builder.get_object('liststoreMatches')
