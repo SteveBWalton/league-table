@@ -156,7 +156,7 @@ class Database(walton.database.IDatabase):
         # Connect to the database.
         cndb = sqlite3.connect(self.filename)
 
-        sql = f"SELECT HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND (THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}') ORDER BY THE_DATE;"
+        sql = f"SELECT HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, HOME_BONUS_PTS, AWAY_BONUS_PTS FROM MATCHES WHERE (HOME_TEAM_ID = {teamIndex} OR AWAY_TEAM_ID = {teamIndex}) AND (THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}') ORDER BY THE_DATE;"
         cursor = cndb.execute(sql)
         listPts = []
         totalPts = 0.0
@@ -179,6 +179,16 @@ class Database(walton.database.IDatabase):
                     else:
                         pts = 3.0
                     pts += (row[3] - row[2]) / 1000
+            if row[0] == teamIndex:
+                # Home match.
+                if row[4] != 0:
+                    # Bonus points.
+                    pts += row[4]
+            else:
+                # Away match.
+                if row[5] != 0:
+                    # Bonus points.
+                    pts += row[5]
             totalPts += pts
             listPts.append(totalPts)
 
