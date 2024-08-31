@@ -1331,7 +1331,7 @@ class Render(walton.toolbar.IToolbar):
     def showTableLast(self, parameters):
         ''' Show a table of team last (5) results. '''
         lastResults = int(parameters['last']) if 'last' in parameters else 5
-        seasonIndex = int(parameters['season']) if 'season' in parameters else 4
+        seasonIndex = int(parameters['season']) if 'season' in parameters else 6
         theDate = datetime.date(*time.strptime(parameters['date'], "%Y-%m-%d")[:3]) if 'date' in parameters else datetime.date.today()
         level = int(parameters['level']) if 'level' in parameters else 0
 
