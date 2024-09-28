@@ -1999,6 +1999,7 @@ class Render(walton.toolbar.IToolbar):
         yScale = height / maxPoints
 
         # Draw a Y axis scale.
+        pts = 0
         for i in range(math.floor(maxPoints / 15)):
             pts = (i + 1) * 15
             if pts < maxPoints:
