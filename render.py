@@ -1882,11 +1882,11 @@ class Render(walton.toolbar.IToolbar):
             for boxIndex in range(math.floor(count - 1), numPositions):
                 y = boxIndex * boxHeight
                 colour = 'yellow'
-                if season.goodPos is not None and  boxIndex < season.goodPos:
+                if season.goodPos is not None and boxIndex < season.goodPos:
                     colour = 'green'
                 elif season.positivePos is not None and boxIndex < season.positivePos:
                     colour = '#CCFFCC;'
-                elif season.badPos is not None and  boxIndex >= season.badPos:
+                elif season.badPos is not None and boxIndex >= season.badPos:
                     colour = 'red'
                 self.html.addLine(f'<rect x="{x}" y="{y}" width="{boxWidth}" height="{boxHeight}" style="fill: {colour};" />')
 
@@ -1910,17 +1910,24 @@ class Render(walton.toolbar.IToolbar):
         svgHeight = boxHeight
         self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
 
+        # This was originally based on point changes, but that does not work with point deductions.
+        # Now based on goal difference change.
         y = 0
-        previousPts = 0
+        # previousPts = 0
+        previousGoalDiff = 0
         for boxIndex in range(len(listPts)):
             x = boxIndex * boxWidth
+            goalDiff = listPts[boxIndex] % 1
             colour = 'yellow'
-            if listPts[boxIndex] > previousPts + 1.1:
+            # if listPts[boxIndex] > previousPts + 1.1:
+            if goalDiff > previousGoalDiff + 0.0001:
                 colour = 'green'
-            elif listPts[boxIndex] < previousPts + 0.9:
+            # elif listPts[boxIndex] < previousPts + 0.9:
+            elif goalDiff < previousGoalDiff - 0.0001:
                 colour = 'red'
             self.html.addLine(f'<rect x="{x}" y="{y}" width="{boxWidth}" height="{boxHeight}" style="fill: {colour};" />')
-            previousPts = listPts[boxIndex]
+            # previousPts = listPts[boxIndex]
+            previousGoalDiff = goalDiff
 
         # Draw a grid.
         for i in range(season.numMatches + 1):
