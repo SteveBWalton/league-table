@@ -1917,16 +1917,17 @@ class Render(walton.toolbar.IToolbar):
         previousGoalDiff = 0
         for boxIndex in range(len(listPts)):
             x = boxIndex * boxWidth
-            goalDiff = listPts[boxIndex] % 1
+            goalDiff = getGoalDifference(listPts[boxIndex])
             colour = 'yellow'
             # if listPts[boxIndex] > previousPts + 1.1:
-            if goalDiff > previousGoalDiff + 0.0001:
+            if goalDiff > previousGoalDiff + 0.1:
                 colour = 'green'
             # elif listPts[boxIndex] < previousPts + 0.9:
-            elif goalDiff < previousGoalDiff - 0.0001:
+            elif goalDiff < previousGoalDiff - 0.1:
                 colour = 'red'
             self.html.addLine(f'<rect x="{x}" y="{y}" width="{boxWidth}" height="{boxHeight}" style="fill: {colour};" />')
             # previousPts = listPts[boxIndex]
+            # print(f'{boxIndex} {listPts[boxIndex]:0.3f} {goalDiff:0.1f} {previousGoalDiff:0.1f} {colour}')
             previousGoalDiff = goalDiff
 
         # Draw a grid.
@@ -2216,6 +2217,17 @@ class Render(walton.toolbar.IToolbar):
 
         # Close the database.
         cndb.close()
+
+
+
+def getGoalDifference(points):
+    '''
+    Returns the goal difference from the number of points.goal_difference value.
+    '''
+    goalDifference = 1000 * (points % 1)
+    if goalDifference > 500:
+        goalDifference -= 1000
+    return goalDifference
 
 
 
