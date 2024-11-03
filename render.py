@@ -208,7 +208,7 @@ class Render(walton.toolbar.IToolbar):
         pointsPerGame = actualPoints / gamesPlayed
 
         # Start a svg control.
-        self.html.add('<svg class="wdlbox" width="{}" height="{}" style="vertical-align: middle;">'.format(width, height))
+        self.html.add(f'<svg class="wdlbox" width="{width}" height="{height}" style="vertical-align: middle;">')
 
         # Draw the possible points in yellow.
         if False:
@@ -2057,6 +2057,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</fieldset>')
         self.html.addLine('<br />')
 
+        # Draw a graph of the points difference to the other team.
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Difference</legend>')
 
         svgWidth = len(listPts) * boxWidth
@@ -2111,6 +2112,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</div>')
         self.html.addLine('<br />')
 
+        # Draw the nonogram of results against all the other teams.
         self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>{team.name} Nonogram</legend>')
         xScale = 14
         svgWidth = 300
@@ -2174,7 +2176,7 @@ class Render(walton.toolbar.IToolbar):
                 self.html.addLine(f'<rect x="{x}" y="{y}" width="{goodPts * xScale}" height="{boxHeight}" style="fill: green;" />')
                 x += goodPts * xScale
 
-        # Draw a grid.
+        # Draw a grid over the nonograph.
         for i in range(12):
             x = (i + 1) * xScale
             y = boxHeight * len(otherTeams)
@@ -2190,6 +2192,10 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</svg>')
         self.html.addLine('</fieldset>')
 
+        # Get the list of points for this team without bonus points.
+        listPts = self.database.getArrayTeamPts(teamIndex, season.startDate, finishDate, False)
+
+        # Draw a graph of the points prediction.
         self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>Points Prediction</legend>')
         self.html.addLine('<table>')
         count = 0
@@ -2197,7 +2203,7 @@ class Render(walton.toolbar.IToolbar):
         for pts in listPts:
             count += 1
             self.html.add('<tr><td>')
-            self.html.addLine(f'<svg width="{boxWidth}" height="{boxHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+            self.html.addLine(f'<svg class="wdlbox" width="{boxWidth}" height="{boxHeight}" style="vertical-align: top; border: 1px solid black; margin: 4px 1px 0px 1px;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
 
             colour = 'yellow'
             if pts > previousPts + 1.1:
@@ -2206,9 +2212,9 @@ class Render(walton.toolbar.IToolbar):
                 colour = 'red'
             self.html.addLine(f'<rect x="0" y="0" width="{boxWidth}" height="{boxHeight}" style="fill: {colour};" />')
             previousPts = pts
-            self.html.addLine('</svg></td><td>')
+            self.html.addLine('</svg>') # </td><td>')
 
-            self.drawPossiblePointsBox(600, 16, 0, season.numMatches * 3, pts, count, season.numMatches - count, season.numMatches, 2 * season.numMatches)
+            self.drawPossiblePointsBox(600, boxHeight, 0, season.numMatches * 3, pts, count, season.numMatches - count, season.numMatches, 2 * season.numMatches)
             self.html.addLine('</td></tr>')
         self.html.addLine('</table>')
         self.html.addLine('</fieldset>')

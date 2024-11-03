@@ -151,7 +151,7 @@ class Database(walton.database.IDatabase):
 
 
 
-    def getArrayTeamPts(self, teamIndex, startDate, finishDate):
+    def getArrayTeamPts(self, teamIndex, startDate, finishDate, isIncludeBonusPoints=True):
         ''' Return an array of the points scored by the specified team between the specified dates. '''
         # Connect to the database.
         cndb = sqlite3.connect(self.filename)
@@ -181,12 +181,12 @@ class Database(walton.database.IDatabase):
                     pts += (row[3] - row[2]) / 1000
             if row[0] == teamIndex:
                 # Home match.
-                if row[4] != 0:
+                if row[4] != 0 and isIncludeBonusPoints:
                     # Bonus points.
                     pts += row[4]
             else:
                 # Away match.
-                if row[5] != 0:
+                if row[5] != 0 and isIncludeBonusPoints:
                     # Bonus points.
                     pts += row[5]
             totalPts += pts
