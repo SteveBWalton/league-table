@@ -190,7 +190,7 @@ class Render(walton.toolbar.IToolbar):
 
 
 
-    def drawPossiblePointsBox(self, width, height, scaleMin, scaleMax, actualPoints, gamesPlayed, remainingGames, safePoints, requiredPoints):
+    def drawPossiblePointsBox(self, width, height, scaleMin, scaleMax, actualPoints, pointsEarned, gamesPlayed, remainingGames, safePoints, requiredPoints):
         '''
         Draws a svg graphical box to display the expected range of possible points.
 
@@ -199,13 +199,14 @@ class Render(walton.toolbar.IToolbar):
         :param int scaleMin: Specifies the miniumn number of points on the scale.
         :param int scaleMax: Specifies the maximum number of points on the scale.
         :param int actualPoints: Specifies the number of points that the team actually has.
-        :param real expectedPoints: Specifies the mean average expected points of the team.
-        :param int remainingGames: Specifies the number of matches remaining for the team.
+        :param int pointsEarned: Specifies the number of points that the team has earned.
+        :param int gamesPlayed: Specifies the number games played.
+        :param int remainingGames: Specifies the number of games to be played.
         :param real safePoints: Specifies the expected miniumn numbers of points to be safe.
         :param real requirePoints: Specifies the expected miniumn number of points required.
         '''
-
-        pointsPerGame = actualPoints / gamesPlayed
+        # print(f'{actualPoints} {pointsEarned}')
+        pointsPerGame = pointsEarned / gamesPlayed
 
         # Start a svg control.
         self.html.add(f'<svg class="wdlbox" width="{width}" height="{height}" style="vertical-align: middle;">')
@@ -260,7 +261,7 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
             self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
         # Draw a line at expected points.
-        tickPos = int(round(width * ((gamesPlayed + remainingGames) * (actualPoints / gamesPlayed) - scaleMin) / (scaleMax - scaleMin), 0))
+        tickPos = int(round(width * ((gamesPlayed + remainingGames) * (pointsEarned / gamesPlayed) - scaleMin) / (scaleMax - scaleMin), 0))
         self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="{height}" style="stroke-width: 2;" />')
 
         if True:
@@ -282,7 +283,26 @@ class Render(walton.toolbar.IToolbar):
 
 
     def displayTable(self, cndb, sql, season, isCombinedHomeAway, isAddColour, isShowRange, theDate, lastResults, isBySeason, extraInfo=0):
-        ''' Display a table on the html object. '''
+        '''
+        Display a table on the html object.
+        The fields from the sql should be
+         0 Team Name
+         1 Home Wins
+         2 Home Draws
+         3 Home Loses
+         4 Home For
+         5 Home Against
+         6 Away Wins
+         7 Away Draws
+         8 Away Loses
+         9 Away For
+        10 Away Against
+        11 Pts (including bonus pts)
+        12 Goal Difference
+        13 Goals For
+        14 Bonus Pts
+        15 Season ID
+        '''
         if isShowRange:
             isShowPossiblePoints = False
             cursor = cndb.execute(sql)
@@ -346,10 +366,9 @@ class Render(walton.toolbar.IToolbar):
                 self.html.add('<tr>')
 
             if isBySeason:
-                season = self.database.getSeason(row[14])
+                season = self.database.getSeason(row[15])
                 self.html.add(f'<td colspan="2" style="text-align: right;"><a href="app:show_team_season?team={extraInfo}&season={season.index}">{season.name}</a></td>')
             else:
-
                 team = self.database.getTeam(row[0])
 
                 count += 1
@@ -404,7 +423,7 @@ class Render(walton.toolbar.IToolbar):
                 if False:
                     self.drawPossiblePointsBox1(300, 18, teamMinPoints, teamMaxPoints, minPoints, maxPoints, season.numMatches * row[11] / played, safePoints, requiredPoints)
                 else:
-                    self.drawPossiblePointsBox(300, 18, minPoints, maxPoints, teamMinPoints, played, (season.numMatches - played), safePoints, requiredPoints)
+                    self.drawPossiblePointsBox(300, 18, minPoints, maxPoints, teamMinPoints, row[11] - row[14], played, (season.numMatches - played), safePoints, requiredPoints)
 
                 self.html.add('</td>')
 
@@ -587,7 +606,7 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'Table to {self.database.formatDate(theDate)}')
         self.html.addLine('</legend>')
 
-        sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) + BONUS_PTS AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM ("
+        sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) + BONUS_PTS AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR, BONUS_PTS FROM ("
 
         # Summerise all the results.
         sql += "SELECT TEAM_ID, SUM(HOME_WINS) AS HOME_WINS, SUM(HOME_DRAWS) AS HOME_DRAWS, SUM(HOME_LOSES) AS HOME_LOSES, SUM(HOME_FOR) AS HOME_FOR, SUM(HOME_AGAINST) AS HOME_AGAINST, SUM(AWAY_WINS) AS AWAY_WINS, SUM(AWAY_DRAWS) AS AWAY_DRAWS, SUM(AWAY_LOSES) AS AWAY_LOSES, SUM(AWAY_FOR) AS AWAY_FOR, SUM(AWAY_AGAINST) AS AWAY_AGAINST, SUM(BONUS_PTS) AS BONUS_PTS FROM ("
@@ -973,7 +992,7 @@ class Render(walton.toolbar.IToolbar):
 
         # Show a season summary.
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Seasons</legend>')
-        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) + HOME_BONUS_PTS + AWAY_BONUS_PTS AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR, HOME_RESULTS.SEASON_ID, HOME_RESULTS.MAX_DATE FROM "
+        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) + HOME_BONUS_PTS + AWAY_BONUS_PTS AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR, HOME_BONUS_PTS + AWAY_BONUS_PTS AS TOTAL_BONUS_PTS, HOME_RESULTS.SEASON_ID, HOME_RESULTS.MAX_DATE FROM "
         sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST, SEASON_ID, MAX(THE_DATE) AS MAX_DATE, SUM(HOME_BONUS_PTS) AS HOME_BONUS_PTS FROM MATCHES "
         sql += f"WHERE HOME_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{theDate}' GROUP BY SEASON_ID) AS HOME_RESULTS "
         sql += "INNER JOIN "
@@ -1101,7 +1120,7 @@ class Render(walton.toolbar.IToolbar):
                 self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>Summary Points for {team.name}</legend>')
 
             # Points that teams have score against this team.
-            sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM ("
+            sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR, 0 AS BONUS_PTS FROM ("
 
             if summaryType == 1:
                 # Summerise all the results from other teams point of view.
@@ -1155,7 +1174,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.add(f'<p><span class="h1">{team1.name} vs {team2.name}</span></p>')
 
         self.html.addLine('<fieldset><legend>Summary</legend>')
-        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
+        sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR, 0 AS BONUS_PTS FROM "
         sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
         sql += f"WHERE ((HOME_TEAM_ID = {team1Index} AND AWAY_TEAM_ID = {team2Index}) OR (HOME_TEAM_ID = {team2Index} AND AWAY_TEAM_ID = {team1Index})) AND THE_DATE <= '{theDate}' "
         sql += "GROUP BY HOME_TEAM_ID) AS HOME_RESULTS "
@@ -1290,7 +1309,7 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'Between {startDate} and {finishDate}')
         self.html.addLine('</legend>')
 
-        sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM ("
+        sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR, 0 AS BONUS_PTS FROM ("
 
         # Summerise all the results.
         sql += "SELECT HOME_TEAM_ID AS TEAM_ID, SUM(HOME_WINS) AS HOME_WINS, SUM(HOME_DRAWS) AS HOME_DRAWS, SUM(HOME_LOSES) AS HOME_LOSES, SUM(HOME_FOR) AS HOME_FOR, SUM(HOME_AGAINST) AS HOME_AGAINST, SUM(AWAY_WINS) AS AWAY_WINS, SUM(AWAY_DRAWS) AS AWAY_DRAWS, SUM(AWAY_LOSES) AS AWAY_LOSES, SUM(AWAY_FOR) AS AWAY_FOR, SUM(AWAY_AGAINST) AS AWAY_AGAINST FROM ("
@@ -1445,7 +1464,7 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'Table to {self.database.formatDate(theDate)}')
         self.html.addLine('</legend>')
 
-        sql = "SELECT TEAM_ID, HOME_WIN, HOME_DRAW, HOME_LOSE, HOME_FOR, HOME_AGN, AWAY_WIN, AWAY_DRAW, AWAY_LOSE, AWAY_FOR, AWAY_AGN, 3 * (HOME_WIN + AWAY_WIN) + (HOME_DRAW + AWAY_DRAW) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGN - AWAY_AGN AS DIFF FROM temp.LAST_RESULTS ORDER BY PTS DESC, DIFF DESC;"
+        sql = "SELECT TEAM_ID, HOME_WIN, HOME_DRAW, HOME_LOSE, HOME_FOR, HOME_AGN, AWAY_WIN, AWAY_DRAW, AWAY_LOSE, AWAY_FOR, AWAY_AGN, 3 * (HOME_WIN + AWAY_WIN) + (HOME_DRAW + AWAY_DRAW) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGN - AWAY_AGN AS DIFF, 0 AS BONUS_PTS FROM temp.LAST_RESULTS ORDER BY PTS DESC, DIFF DESC;"
 
         #sql = "SELECT HOME_TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM "
         #sql += "(SELECT HOME_TEAM_ID, SUM(HOME_TEAM_FOR > AWAY_TEAM_FOR) AS HOME_WINS, SUM(HOME_TEAM_FOR = AWAY_TEAM_FOR) AS HOME_DRAWS, SUM(HOME_TEAM_FOR < AWAY_TEAM_FOR) AS HOME_LOSES, SUM(HOME_TEAM_FOR) AS HOME_FOR, SUM(AWAY_TEAM_FOR) AS HOME_AGAINST FROM MATCHES "
@@ -1598,7 +1617,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.add(f'Table between {startDate} and {finishDate}')
         self.html.addLine('</legend>')
 
-        sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR FROM ("
+        sql = "SELECT TEAM_ID, HOME_WINS, HOME_DRAWS, HOME_LOSES, HOME_FOR, HOME_AGAINST, AWAY_WINS, AWAY_DRAWS, AWAY_LOSES, AWAY_FOR, AWAY_AGAINST, 3 * (HOME_WINS + AWAY_WINS) + (HOME_DRAWS + AWAY_DRAWS) AS PTS, HOME_FOR + AWAY_FOR - HOME_AGAINST - AWAY_AGAINST AS DIFF, HOME_FOR + AWAY_FOR AS FOR, 0 AS BONUS_PTS FROM ("
 
         # Summerise all the results.
         sql += "SELECT TEAM_ID, SUM(HOME_WINS) AS HOME_WINS, SUM(HOME_DRAWS) AS HOME_DRAWS, SUM(HOME_LOSES) AS HOME_LOSES, SUM(HOME_FOR) AS HOME_FOR, SUM(HOME_AGAINST) AS HOME_AGAINST, SUM(AWAY_WINS) AS AWAY_WINS, SUM(AWAY_DRAWS) AS AWAY_DRAWS, SUM(AWAY_LOSES) AS AWAY_LOSES, SUM(AWAY_FOR) AS AWAY_FOR, SUM(AWAY_AGAINST) AS AWAY_AGAINST FROM ("
@@ -2214,7 +2233,7 @@ class Render(walton.toolbar.IToolbar):
             previousPts = pts
             self.html.addLine('</svg>') # </td><td>')
 
-            self.drawPossiblePointsBox(600, boxHeight, 0, season.numMatches * 3, pts, count, season.numMatches - count, season.numMatches, 2 * season.numMatches)
+            self.drawPossiblePointsBox(600, boxHeight, 0, season.numMatches * 3, pts, pts, count, season.numMatches - count, season.numMatches, 2 * season.numMatches)
             self.html.addLine('</td></tr>')
         self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
