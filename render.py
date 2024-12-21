@@ -1772,7 +1772,6 @@ class Render(walton.toolbar.IToolbar):
         # Decode the parameters.
         teamIndex = int(parameters['team']) if 'team' in parameters else 1
         seasonIndex = int(parameters['season']) if 'season' in parameters else self.lastSeasonIndex
-        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else 0
 
         # Get the team object.
         team = self.database.getTeam(teamIndex)
@@ -1969,7 +1968,7 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<form action="app:show_team_season" method="get">')
         self.html.addLine(f'<input type="hidden" name="team" value="{teamIndex}" />')
         self.html.addLine(f'<input type="hidden" name="season" value="{seasonIndex}" />')
-        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else 0
+        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else count - 1
 
         self.html.add('<select name="opponent" onchange="this.form.submit();">')
         for index in range(len(otherTeams)):
