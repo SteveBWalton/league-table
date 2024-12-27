@@ -1971,6 +1971,9 @@ class Render(walton.toolbar.IToolbar):
         opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else count - 1
 
         self.html.add('<select name="opponent" onchange="this.form.submit();">')
+        if opponentIndex >= len(otherTeams):
+            opponentIndex = len(otherTeams) - 1
+        print(opponentIndex)
         for index in range(len(otherTeams)):
             otherTeam = self.database.getTeam(otherTeams[index][0])
             self.html.add(f'<option value="{index}"')
