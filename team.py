@@ -5,7 +5,7 @@ Module to support teams in the table program.
 Each team is a row from the TEAMS table in the table database.
 '''
 
-# Require the Sqlite3 library
+# Require the Sqlite3 library.
 try:
     import sqlite3
 except:
@@ -15,8 +15,6 @@ except:
 
 import datetime
 import time
-
-# import modDatabase
 
 
 
