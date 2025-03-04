@@ -1796,6 +1796,7 @@ class Render(walton.toolbar.IToolbar):
         cndb = sqlite3.connect(self.database.filename)
 
         # Show the matches.
+        lastTeamPlayedIdx = None
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;"><legend>Matches</legend>')
         self.html.addLine('<table>')
         sql = "SELECT THE_DATE, THE_DATE_GUESS, HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR, SEASON_ID FROM MATCHES WHERE (HOME_TEAM_ID = ? OR AWAY_TEAM_ID = ?) AND THE_DATE >= ? AND THE_DATE <= ? ORDER BY THE_DATE DESC;"
@@ -1817,6 +1818,7 @@ class Render(walton.toolbar.IToolbar):
                     className = 'lost2'
                 else:
                     className = 'draw2'
+                lastTeamPlayedIdx = awayTeam.index
             else:
                 if row[4] < row[5]:
                     className = 'win2'
@@ -1824,6 +1826,7 @@ class Render(walton.toolbar.IToolbar):
                     className = 'lost2'
                 else:
                     className = 'draw2'
+                lastTeamPlayedIdx = homeTeam.index
 
             self.html.add(f'<tr class="{className}">')
             self.html.add(f'<td class="date" style="text-align: center;"><a href="app:show_team?id={teamIndex}&date={row[0]}">{formatMatchDate}</a></td>')
