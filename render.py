@@ -2046,6 +2046,17 @@ class Render(walton.toolbar.IToolbar):
                 x = left + xScale * match
                 self.html.addLine(f'<line x1="{x}" y1="{top}" x2="{x}" y2="{top + height}" style="stroke: grey; stroke-width: 1;" />')
 
+        # Draw the 5 game moving average as a green bar.
+        x = left
+        for index in range(0, len(listPts)):
+            if index >= 5:
+                movingAveragePts = listPts[index] - listPts[index-5]
+            else:
+                movingAveragePts = listPts[index]
+            barHeight = yScale * movingAveragePts
+            self.html.addLine(f'"<rect x={x} y={top + height - barHeight} width={xScale - 1} height={barHeight} style="fill: moccasin;" />') # clip-path="url(#graph-area)"
+            x += xScale
+
         # Draw the points.
         x = left
         self.html.add(f'<polyline points="{x},{top + height} ')
@@ -2055,17 +2066,17 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'{x},{y} ')
         self.html.addLine(f'" style="fill: none; stroke: green; stroke-width: 2;" />') # clip-path="url(#graph-area)"
 
-        # Draw the 5 game moving average.
-        if len(listPts) >= 5:
-            x = left + 5 * xScale
-            y = top + height - yScale * listPts[4]
-            self.html.add(f'<polyline points="{x},{y} ')
-            for index in range(5, len(listPts)):
-                movingAveragePts = listPts[index] - listPts[index-5]
-                x += xScale
-                y = top + height - yScale * movingAveragePts
-                self.html.add(f'{x},{y} ')
-            self.html.addLine(f'" style="fill: none; stroke: green; stroke-width: 2;" />') # clip-path="url(#graph-area)"
+        # Draw the 5 game moving average as a green line.
+        #if len(listPts) >= 5:
+        #    x = left + 5 * xScale
+        #    y = top + height - yScale * listPts[4]
+        #    self.html.add(f'<polyline points="{x},{y} ')
+        #    for index in range(5, len(listPts)):
+        #        movingAveragePts = listPts[index] - listPts[index-5]
+        #        x += xScale
+        #        y = top + height - yScale * movingAveragePts
+        #        self.html.add(f'{x},{y} ')
+        #    self.html.addLine(f'" style="fill: none; stroke: green; stroke-width: 2;" />') # clip-path="url(#graph-area)"
 
         # Draw the opponent points.
         x = left
