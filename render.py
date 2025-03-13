@@ -2053,8 +2053,9 @@ class Render(walton.toolbar.IToolbar):
                 movingAveragePts = listPts[index] - listPts[index-5]
             else:
                 movingAveragePts = listPts[index]
-            barHeight = yScale * movingAveragePts
-            self.html.addLine(f'"<rect x={x} y={top + height - barHeight} width={xScale - 1} height={barHeight} style="fill: moccasin;" />') # clip-path="url(#graph-area)"
+            barHeight = yScale * movingAveragePts - 1
+            if barHeight > 1:
+                self.html.addLine(f'"<rect x={x} y={top + height - barHeight - 1} width={xScale - 1} height={barHeight} style="fill: moccasin;" />') # clip-path="url(#graph-area)"
             x += xScale
 
         # Draw the points.
