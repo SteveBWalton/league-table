@@ -69,9 +69,7 @@ class Season:
 
 
     def toHtml(self):
-        '''
-        Returns the season name in html format.
-        '''
+        ''' Returns the season name in html format. '''
         # Add a link.
         html = '<a href="app:home?season={}">'.format(self.index)
 
