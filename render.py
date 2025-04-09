@@ -261,7 +261,9 @@ class Render(walton.toolbar.IToolbar):
             self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="4" style="stroke-width: 1;" />')
             self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="{height}" x2="{tickPos}" y2="{height - 4}" style="stroke-width: 1;" />')
         # Draw a line at expected points.
-        tickPos = int(round(width * ((gamesPlayed + remainingGames) * (pointsEarned / gamesPlayed) - scaleMin) / (scaleMax - scaleMin), 0))
+        expectedPoints = actualPoints + pointsPerGame * remainingGames
+        # tickPos = int(round(width * ((gamesPlayed + remainingGames) * (pointsEarned / gamesPlayed) - scaleMin) / (scaleMax - scaleMin), 0))
+        tickPos = int(round(width * (expectedPoints - scaleMin) / (scaleMax - scaleMin), 0))
         self.html.add(f'<line class="wdlbox" x1="{tickPos}" y1="0" x2="{tickPos}" y2="{height}" style="stroke-width: 2;" />')
 
         if True:
