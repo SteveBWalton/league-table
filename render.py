@@ -2256,6 +2256,83 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('</table>')
         self.html.addLine('</fieldset>')
 
+        # Draw a graph of the type of results.
+        self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>Result Distribution</legend>')
+
+        # Build an dictionary of the result types.
+        MIN_SCORE = -4
+        MAX_SCORE = +4
+        resultTypes = {}
+        for resultType in range(MIN_SCORE, MAX_SCORE+1):
+            resultTypes[resultType] = 0
+
+        # Get the home results.
+        sql = f"SELECT HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE HOME_TEAM_ID = {team.index} AND THE_DATE >= '{season.startDate}' AND THE_DATE <= '{finishDate}';"
+        cursor = cndb.execute(sql)
+        for row in cursor:
+            resultType = row[0] - row[1]
+            if resultType < MIN_SCORE:
+                resultType = MIN_SCORE
+            if resultType > MAX_SCORE:
+                resultType = MAX_SCORE
+            resultTypes[resultType] += 1
+            # print(f'{resultType} = {resultTypes[resultType]}')
+        cursor.close()
+        # Get the away results.
+        sql = f"SELECT HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE AWAY_TEAM_ID = {team.index} AND THE_DATE >= '{season.startDate}' AND THE_DATE <= '{finishDate}';"
+        cursor = cndb.execute(sql)
+        for row in cursor:
+            resultType = row[1] - row[0]
+            if resultType < MIN_SCORE:
+                resultType = MIN_SCORE
+            if resultType > MAX_SCORE:
+                resultType = MAX_SCORE
+            resultTypes[resultType] += 1
+            #print(f'{resultType} = {resultTypes[resultType]}')
+        cursor.close()
+
+        #self.html.addLine('<table>')
+        #for resultType in range(MIN_SCORE, MAX_SCORE + 1):
+        #    self.html.addLine(f'<tr><td>{resultType}</td><td>{resultTypes[resultType]}</td></tr>')
+        #self.html.addLine('</table>')
+        MAX_COUNT = 5
+        for resultType in range(MIN_SCORE, MAX_SCORE + 1):
+            if resultTypes[resultType] > MAX_COUNT:
+                MAX_COUNT = resultTypes[resultType]
+
+        boxWidth = 16
+        boxHeight = 16
+        svgWidth = (MAX_SCORE - MIN_SCORE + 1) * boxWidth
+        svgHeight = MAX_COUNT * boxHeight
+
+        self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
+
+        # Draw the grid.
+        for resultType in range(MIN_SCORE, MAX_SCORE + 1):
+            # print(f'{resultType} = {resultTypes[resultType]}')
+            x = (resultType - MIN_SCORE) * boxWidth
+            colour = 'red'
+            if resultType == 0:
+                colour = 'yellow'
+            elif resultType > 0:
+                colour = 'green'
+            if resultTypes[resultType] > 0:
+                 y = resultTypes[resultType] * boxHeight
+                 self.html.addLine(f'<rect x="{x}" y="{svgHeight - y}" width="{boxWidth}" height="{y}" style="fill: {colour};" />')
+                 # print(f'<rect x="{x}" y="{0}" width="{boxWidth}" height="{y}" style="fill: {colour};" />')
+
+        # Draw a grid over the graph.
+        for i in range(MIN_SCORE, MAX_SCORE):
+            x = (1 + i - MIN_SCORE) * boxWidth
+            self.html.addLine(f'<line x1="{x}" y1="0" x2="{x}" y2="{svgHeight}" style="stroke: grey; stroke-width: 1;" />')
+        for i in range(MAX_COUNT - 1):
+            y = boxHeight * (i + 1)
+            self.html.addLine(f'<line x1="0" y1="{y}" x2="{svgWidth}" y2="{y}" style="stroke: grey; stroke-width: 1;" />')
+
+        self.html.addLine('</svg>')
+
+        self.html.addLine('</fieldset>')
+
         self.html.addLine('</div>')
 
         # Close the database.
