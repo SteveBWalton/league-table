@@ -74,6 +74,8 @@ class Render(walton.toolbar.IToolbar):
         self.clipboardText = None
         # A Html object to prepare the output for the browser.
         self.html = walton.html.Html()
+        # A default height for the distribution graph.
+        self.maxDistributionCount = 10
 
         # Define the actions this module can handle and the function to handle the action.
         self.actions = {
@@ -1743,6 +1745,12 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('<br/>')
 
+        # Draw a graph of the type of results.
+        for team in includedTeams:
+            self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>{team[1]} Distribution</legend>')
+            self.maxDistributionCount = self.displayGraphTypeResults(cndb, team[0], startDate, finishDate, self.maxDistributionCount)
+            self.html.addLine('</fieldset>')
+
         # Show the included teams and allow them to be removed.
         self.html.addLine('<fieldset style="display: inline-block; vertical-align: top;">')
         self.html.addLine('<legend>Included</legend>')
@@ -2258,6 +2266,17 @@ class Render(walton.toolbar.IToolbar):
 
         # Draw a graph of the type of results.
         self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>Result Distribution</legend>')
+        self.displayGraphTypeResults(cndb, teamIndex, season.startDate, finishDate, 5)
+        self.html.addLine('</fieldset>')
+
+        self.html.addLine('</div>')
+
+        # Close the database.
+        cndb.close()
+
+
+    def displayGraphTypeResults(self, cndb, teamIndex, startDate, finishDate, MAX_COUNT):
+
 
         # Build an dictionary of the result types.
         MIN_SCORE = -4
@@ -2267,7 +2286,7 @@ class Render(walton.toolbar.IToolbar):
             resultTypes[resultType] = 0
 
         # Get the home results.
-        sql = f"SELECT HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE HOME_TEAM_ID = {team.index} AND THE_DATE >= '{season.startDate}' AND THE_DATE <= '{finishDate}';"
+        sql = f"SELECT HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE HOME_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}';"
         cursor = cndb.execute(sql)
         for row in cursor:
             resultType = row[0] - row[1]
@@ -2279,7 +2298,7 @@ class Render(walton.toolbar.IToolbar):
             # print(f'{resultType} = {resultTypes[resultType]}')
         cursor.close()
         # Get the away results.
-        sql = f"SELECT HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE AWAY_TEAM_ID = {team.index} AND THE_DATE >= '{season.startDate}' AND THE_DATE <= '{finishDate}';"
+        sql = f"SELECT HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE AWAY_TEAM_ID = {teamIndex} AND THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}';"
         cursor = cndb.execute(sql)
         for row in cursor:
             resultType = row[1] - row[0]
@@ -2295,7 +2314,6 @@ class Render(walton.toolbar.IToolbar):
         #for resultType in range(MIN_SCORE, MAX_SCORE + 1):
         #    self.html.addLine(f'<tr><td>{resultType}</td><td>{resultTypes[resultType]}</td></tr>')
         #self.html.addLine('</table>')
-        MAX_COUNT = 5
         for resultType in range(MIN_SCORE, MAX_SCORE + 1):
             if resultTypes[resultType] > MAX_COUNT:
                 MAX_COUNT = resultTypes[resultType]
@@ -2331,12 +2349,7 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('</svg>')
 
-        self.html.addLine('</fieldset>')
-
-        self.html.addLine('</div>')
-
-        # Close the database.
-        cndb.close()
+        return MAX_COUNT
 
 
 
