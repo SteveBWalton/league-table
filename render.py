@@ -2317,7 +2317,8 @@ class Render(walton.toolbar.IToolbar):
         for resultType in range(MIN_SCORE, MAX_SCORE + 1):
             if resultTypes[resultType] > MAX_COUNT:
                 MAX_COUNT = resultTypes[resultType]
-
+                
+        # Split this into 2 functions here.
         boxWidth = 16
         boxHeight = 16
         svgWidth = (MAX_SCORE - MIN_SCORE + 1) * boxWidth
