@@ -1745,10 +1745,15 @@ class Render(walton.toolbar.IToolbar):
 
         self.html.addLine('<br/>')
 
+        # Calculate the max count across all the result type histograms.
+        maxCount = 5
+        for team in includedTeams:
+            ignore, maxCount = self.getTypeResultsData(cndb, team[0], startDate, finishDate, -4, +4, maxCount)
+
         # Draw a graph of the type of results.
         for team in includedTeams:
             self.html.addLine(f'<fieldset style="display: inline-block; vertical-align: top;"><legend>{team[1]} Distribution</legend>')
-            self.maxDistributionCount = self.displayGraphTypeResults(cndb, team[0], startDate, finishDate, -4, +4, self.maxDistributionCount)
+            self.displayGraphTypeResults(cndb, team[0], startDate, finishDate, -4, +4, maxCount)
             self.html.addLine('</fieldset>')
 
         # Show the included teams and allow them to be removed.
