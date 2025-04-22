@@ -1659,8 +1659,8 @@ class Render(walton.toolbar.IToolbar):
             includedTeams.append([row[0], row[1]])
 
         # Fetch their points.
-        maxMatches = 0
-        maxPoints = 0
+        maxMatches = 1
+        maxPoints = 1
         for team in includedTeams:
 
 
