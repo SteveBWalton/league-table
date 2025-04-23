@@ -15,7 +15,6 @@ import math
 # Import my own libraries.
 import walton.html
 import walton.toolbar
-# from match_type import MatchType
 
 
 
