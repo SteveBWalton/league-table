@@ -89,9 +89,15 @@ class Render(walton.toolbar.IToolbar):
             'show_team_season'  : self.showTeamSeason
         }
 
+        # Connect to the database.
+        cndb = sqlite3.connect(self.database.filename)
+
         # Indentify the current last season.
         # TODO: Calculate this!
         self.lastSeasonIndex = 6
+
+        # Close the database.
+        cndb.close()
 
 
 
