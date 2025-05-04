@@ -93,8 +93,11 @@ class Render(walton.toolbar.IToolbar):
         cndb = sqlite3.connect(self.database.filename)
 
         # Indentify the current last season.
-        # TODO: Calculate this!
-        self.lastSeasonIndex = 6
+        sql = "SELECT ID FROM SEASONS ORDER BY FINISH_DATE DESC LIMIT 1;"
+        cursor = cndb.execute(sql)
+        row = cursor.fetchone()
+        cursor. close()
+        self.lastSeasonIndex = row[0]
 
         # Close the database.
         cndb.close()
