@@ -157,6 +157,9 @@ class Season:
             self._nextSeasonIndex = 3
         elif self.index == 6:
             self._previousSeasonIndex = 4
+            self._nextSeasonIndex = 7
+        elif self.index == 7:
+            self._previousSeasonIndex = 6
             self._nextSeasonIndex = None
 
         # Close the database.

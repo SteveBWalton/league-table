@@ -149,8 +149,8 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             'on_menuitemEditPreferences_activate'   : self._editPreferences,
             'on_menuCopy_activate'                  : self._editCopy,
 
-            'on_menuitemViewNext_activate'          : self._ViewNext,
-            'on_menuitemViewPrevious_activate'      : self._ViewPrevious,
+            'on_menuitemViewNext_activate'          : self._viewNext,
+            'on_menuitemViewPrevious_activate'      : self._viewPrevious,
             'on_menuitemViewAge_toggled'            : self._ViewAge,
             'on_menuitemViewDebug_toggled'          : self._viewDebug,
 
@@ -165,8 +165,8 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
             'on_toolbuttonIndex_clicked'            : self._fileIndex,
             'on_toolbuttonBack_clicked'             : self._fileBack,
             'on_toolbuttonEdit_clicked'             : self._editEdit,
-            'on_toolbuttonNext_clicked'             : self._ViewNext,
-            'on_toolbuttonPrevious_clicked'         : self._ViewPrevious,
+            'on_toolbuttonNext_clicked'             : self._viewNext,
+            'on_toolbuttonPrevious_clicked'         : self._viewPrevious,
             'on_toolbuttonAge_toggled'              : self._ViewAge,
 
             'on_menuitemLevel0_activate'            : self._LevelMenu,
@@ -348,13 +348,13 @@ class MainWindow(walton.glade.webkit.IWebKit2, walton.glade.fullscreen.IFullscre
 
 
 
-    def _ViewNext(self, widget):
+    def _viewNext(self, widget):
         ''' Signal handler for the 'View' → 'Next' menu item. '''
         self.followLocalLink(self.render.nextPage, True)
 
 
 
-    def _ViewPrevious(self, widget):
+    def _viewPrevious(self, widget):
         ''' Signal handler for the 'View' → 'Previous' menu item. '''
         self.followLocalLink(self.render.previousPage, True)
 
