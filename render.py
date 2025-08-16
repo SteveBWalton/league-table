@@ -1994,7 +1994,8 @@ class Render(walton.toolbar.IToolbar):
         self.html.addLine('<form action="app:show_team_season" method="get">')
         self.html.addLine(f'<input type="hidden" name="team" value="{teamIndex}" />')
         self.html.addLine(f'<input type="hidden" name="season" value="{seasonIndex}" />')
-        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else count - 1
+        opponentIndex = int(parameters['opponent']) if 'opponent' in parameters else math.floor(count) - 1
+        # print(f'{opponentIndex}')
 
         self.html.add('<select name="opponent" onchange="this.form.submit();">')
         if opponentIndex >= len(otherTeams):
