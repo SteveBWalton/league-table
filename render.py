@@ -1902,6 +1902,7 @@ class Render(walton.toolbar.IToolbar):
         height = svgHeight
         # self.html.addLine(f'<rect x="{0}" y="{0}" width="{width}" height="{height}" style="fill: white; stroke: black; stroke-width: 1;" />')
 
+        count = 1
         for matchIndex in range(numMatches):
             # Count the better positions.
             count = 1
