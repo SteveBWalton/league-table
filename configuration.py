@@ -11,16 +11,16 @@ import xml.dom.minidom
 
 # SportResults libraries.
 import walton.configuration
-import walton.xml
+import walton.wxml
 
 
 
 class Configuration(walton.configuration.IConfiguration):
     '''
     Class to represent the configuration options for the Sport Results database program.
-    Originally this used xml.dom.minidom directly but now using my own :py:class:`~walton.xml.XmlDocument` class.
+    Originally this used xml.dom.minidom directly but now using my own :py:class:`~walton.wxml.XmlDocument` class.
 
-    :ivar XmlDocument xmlDocument: The :py:class:`~walton.xml.XmlDocument` object that persits the configuration options.
+    :ivar XmlDocument xmlDocument: The :py:class:`~walton.wxml.XmlDocument` object that persits the configuration options.
     :ivar string databaseFilename: The filename of the sports results database.
     '''
 
