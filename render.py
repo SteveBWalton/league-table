@@ -1670,30 +1670,6 @@ class Render(walton.toolbar.IToolbar):
         maxMatches = 1
         maxPoints = 1
         for team in includedTeams:
-
-
-            '''
-            sql = f"SELECT HOME_TEAM_ID, AWAY_TEAM_ID, HOME_TEAM_FOR, AWAY_TEAM_FOR FROM MATCHES WHERE (HOME_TEAM_ID = {team[0]} OR AWAY_TEAM_ID = {team[0]}) AND (THE_DATE >= '{startDate}' AND THE_DATE <= '{finishDate}') ORDER BY THE_DATE;"
-            cursor = cndb.execute(sql)
-            listPts = []
-            totalPts = 0
-            for row in cursor:
-                if row[2] == row[3]:
-                    pts = 1
-                else:
-                    if row[0] == team[0]:
-                        if row[2] > row[3]:
-                            pts = 3
-                        else:
-                            pts = 0
-                    else:
-                        if row[2] > row[3]:
-                            pts = 0
-                        else:
-                            pts = 3
-                totalPts += pts
-                listPts.append(totalPts)
-            '''
             listPts = self.database.getArrayTeamPts(team[0], startDate, finishDate)
             team.append(listPts)
 
@@ -1732,6 +1708,7 @@ class Render(walton.toolbar.IToolbar):
         # Draw the points.
         lineColours = ['red', 'blue', 'green', 'orange', 'hotpink', 'gray', 'brown', 'brown']
         teamCount = 0
+        lastY = -999;
         for team in includedTeams:
             x = left
             self.html.add(f'<polyline points="{x},{top + height} ')
@@ -1742,7 +1719,13 @@ class Render(walton.toolbar.IToolbar):
             self.html.addLine(f'" style="fill: none; stroke: {lineColours[teamCount]}; stroke-width: 2;" />') # clip-path="url(#graph-area)"
 
             # Label the lines.
-            y = top + 6 + 12 * teamCount
+            # Position y as lines.
+            # y = top + 6 + 12 * teamCount
+            # Position y as the line heights
+            if y < lastY + 12:
+                y = lastY + 12
+            lastY = y
+            
             self.html.addLine(f'<line x1="{left}" y1="{y}" x2="{left + 10}" y2="{y}" stroke="{lineColours[teamCount]}" />')
             self.html.addLine(f'<text text-anchor="start" font-size="8pt" x="{left + 12}" y="{y + 4}">{team[1]}</text>')
 
