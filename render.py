@@ -1684,7 +1684,7 @@ class Render(walton.toolbar.IToolbar):
         includedTeams.sort(key=sortTeamsByFinalPoints, reverse=True)
 
         # Draw a graph.
-        svgWidth = 700
+        svgWidth = 800
         svgHeight = 500
         self.html.addLine(f'<svg width="{svgWidth}" height="{svgHeight}" style="vertical-align: top; border: 1px solid black;" xmlns="http://www.w3.org/2000/svg" version="1.1">')
 
@@ -1710,6 +1710,7 @@ class Render(walton.toolbar.IToolbar):
         teamCount = 0
         lastY = -999;
         for team in includedTeams:
+            # Draw a line for the team.
             x = left
             self.html.add(f'<polyline points="{x},{top + height} ')
             for pts in team[2]:
@@ -1717,6 +1718,13 @@ class Render(walton.toolbar.IToolbar):
                 y = top + height - yScale * pts
                 self.html.add(f'{x},{y} ')
             self.html.addLine(f'" style="fill: none; stroke: {lineColours[teamCount]}; stroke-width: 2;" />') # clip-path="url(#graph-area)"
+            
+            # Draw points on the line.
+            x = left
+            for pts in team[2]:
+                x += xScale
+                y = top + height - yScale * pts
+                self.html.add(f'<circle r="3" cx="{x}" cy="{y}" fill="{lineColours[teamCount]}" stroke="black" />')
 
             # Label the lines.
             # Position y as lines.
@@ -1726,8 +1734,9 @@ class Render(walton.toolbar.IToolbar):
                 y = lastY + 12
             lastY = y
             
-            self.html.addLine(f'<line x1="{left}" y1="{y}" x2="{left + 10}" y2="{y}" stroke="{lineColours[teamCount]}" />')
-            self.html.addLine(f'<text text-anchor="start" font-size="8pt" x="{left + 12}" y="{y + 4}">{team[1]}</text>')
+            self.html.addLine(f'<line x1="{left}" y1="{y}" x2="{left + 20}" y2="{y}" stroke="{lineColours[teamCount]}" />')
+            self.html.addLine(f'<circle r="4" cx="{left + 10}" cy="{y}" fill="{lineColours[teamCount]}" stroke="black" />')
+            self.html.addLine(f'<text text-anchor="start" font-size="8pt" x="{left + 22}" y="{y + 4}">{team[1]}</text>')
 
             teamCount += 1
 
