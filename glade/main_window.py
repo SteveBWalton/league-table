@@ -35,12 +35,16 @@ except:
 #if _useWebKit2:
 try:
     # This required the 'webkitgtk4' package in Fedora 27.
-    # gi.require_version('WebKit2', '4.0')
     gi.require_version('WebKit2', '4.1') # GTK3 on Fedora 44.
     from gi.repository import WebKit2
     # print("Using WebKit2")
 except:
-    print("WebKit2 Not Available. ({})".format(__file__))
+    print("WebKit2 version 4.1 Not Available. ({})".format(__file__))
+    try:
+        gi.require_version('WebKit2', '4.0')
+        from gi.repository import WebKit2
+    except:
+        print("WebKit2 version 4.0 Not Available. ({})".format(__file__))
 
 
 # Import more system libraries.
